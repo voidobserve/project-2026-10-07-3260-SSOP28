@@ -1,0 +1,31 @@
+{
+    // C语言文件的特定设置
+    "[c]": {
+        // 设置缩进大小 
+        "editor.tabSize": 4,
+        // "editor.detectIndentation":true,
+        // 
+        "editor.insertSpaces": false,
+        // 在第80列显示标尺，提醒不要超过80字符宽度（Linux内核规范）
+        "editor.rulers": [
+            80
+        ],
+        // 保存文件时自动格式化
+        "editor.formatOnSave": false,
+    },
+    // C++语言文件的特定设置（与C语言类似）
+    "[cpp]": {
+        // 设置缩进大小  
+        "editor.tabSize": 4,
+        "editor.insertSpaces": false,
+        // 在第80列显示标尺
+        "editor.rulers": [
+            80
+        ],
+        // 保存文件时自动格式化
+        "editor.formatOnSave": false,
+    },
+    // clang-format配置
+    "C_Cpp.formatting": "clangFormat",
+    "Codegeex.RepoIndex": true, // 使用 clang-format 进行格式化
+}

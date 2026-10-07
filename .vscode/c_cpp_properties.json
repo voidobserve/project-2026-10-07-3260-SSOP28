@@ -1,0 +1,43 @@
+{
+    "configurations": [
+        {
+            "name": "Target 1",
+            "includePath": [
+                "C:/Keil_v5/C51/INC", /* C 标准库 头文件 */
+                "${workspaceFolder}/",
+                "${workspaceFolder}/Hardware",
+                "${workspaceFolder}/Libraries/include",
+                "${workspaceFolder}/Libraries/Include",
+                "${workspaceFolder}/User/lib",
+                "${workspaceFolder}/User/",
+                "${workspaceFolder}/**" // 搜索工程目录下的所有头文件
+            ],
+            "defines": [
+                "__C51__",
+                "__VSCODE_C51__",
+                "reentrant=",
+                "compact=",
+                "small=",
+                "large=",
+                "data=",
+                "idata=",
+                "pdata=",
+                "bdata=",
+                "xdata=",
+                "code=",
+                "bit=char",
+                "sbit=char",
+                "sfr=char",
+                "sfr16=int",
+                "sfr32=int",
+                "interrupt=",
+                "using=",
+                "_at_=",
+                "_priority_=",
+                "_task_="
+            ],
+            "intelliSenseMode": "${default}"
+        }
+    ],
+    "version": 4
+}

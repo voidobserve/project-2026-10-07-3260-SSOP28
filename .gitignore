@@ -1,0 +1,7 @@
+# 编辑器 / 工作笔记（不入库）
+.obsidian/
+agent/
+
+# 编译产物
+**/release/
+
