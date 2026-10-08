@@ -42,7 +42,7 @@ typedef struct
 
 // 48MHz 主频下 delay(4) 仅约 150~350ns，早于 DS1302 数据输出延迟 tCDD(最大500ns)，
 // 会导致采样过早、读出固定的交替值(如秒=85即0x55)。加大延时保证电平稳定后再采样。
-#define AIP1302_DELAY() delay(4)
+#define AIP1302_DELAY() delay(5)
 
 extern volatile aip1302_info_t aip1302_info;
 extern volatile u16 aip1302_update_time_interval;

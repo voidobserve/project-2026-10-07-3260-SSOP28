@@ -9,7 +9,9 @@
 #include "battery.h"
 #include "adc.h"
 #include "instrument.h"
+
 #include "aip1302.h" // aip1302_update_time_interval
+#include "eeprom_24cxx.h"
 
 #if USER_DEBUG_ENABLE
 // #include "aip1302.h" // TEST ONLY 测试完成后，应该删除
@@ -98,6 +100,9 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
 
 #if AIP1302_TEST_ENABLE
         aip1302_test_1ms_isr();
+#endif
+#if EEPROM_24CXX_TEST_ENABLE
+        test_eeprom_24cxx_period_1ms_isr();
 #endif
     }
 

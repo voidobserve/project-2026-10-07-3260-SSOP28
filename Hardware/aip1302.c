@@ -16,7 +16,7 @@ static u8 __aip1302_read_byte__(const u8 cmd);
  */
 static void aip1302_data_mode_out(void)
 {
-    // P2_PU &= ~GPIO_P23_PULL_UP(0x01); // 不上拉
+    P2_PU &= ~GPIO_P23_PULL_UP(0x01);  // 不上拉
     P2_MD0 &= ~GPIO_P23_MODE_SEL(0x3); // 清空配置
     P2_MD0 |= GPIO_P23_MODE_SEL(0x1);  // 输出模式
     FOUT_S23 = GPIO_FOUT_AF_FUNC;
@@ -59,8 +59,8 @@ void aip1302_config(void)
 #if 1
     // 判断时钟芯片aip1302的晶振是否正在运行，
     // 如果在运行，不做任何处理
-    // 如果不在运行，将时钟芯片内部的数据配置为 2000.01.01--00:00:00,最后打开晶振
-    ret = aip1302_is_working(); // 函数内部调用了 aip1302_read_all();
+    // 如果不在运行，给时钟芯片配置一个默认时间 ,最后打开晶振
+    ret = aip1302_is_working(); // 函数内部调用了 aip1302_read_all()
     if (ret) {
 // 如果时钟芯片aip1302的晶振正在运行
 #if USER_DEBUG_ENABLE

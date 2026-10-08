@@ -1,8 +1,6 @@
 #include <string.h> // memset()
 
 #include "instrument.h"
-#include "user_flash.h"
-#include "uart_transmitter.h"
 #include "uart0.h"
 
 #include "user_config.h"

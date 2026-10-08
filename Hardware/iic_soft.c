@@ -1,30 +1,6 @@
 #include "iic_soft.h"
 #include "include.h"
 
-/* ======================== 端口定义(只在此 .c 中实现) ======================== */
-/* 只使用 1 条软件 IIC 总线 */
-#define IIC_SOFT_SCL P22 /* iic 时钟引脚 SCL  */
-#define IIC_SOFT_SDA P23 /* iic 数据引脚 SDA  */
-
-#define IIC_SOFT_SCL_MODE_REG  P2_MD0
-#define IIC_SOFT_SCL_MODE_MASK GPIO_P22_MODE_SEL(0x03)
-#define IIC_SOFT_SCL_OUT_MASK  GPIO_P22_MODE_SEL(0x01)
-#define IIC_SOFT_SCL_FOUT_REG  FOUT_S22
-
-#define IIC_SOFT_SDA_MODE_REG  P2_MD0
-#define IIC_SOFT_SDA_MODE_MASK GPIO_P23_MODE_SEL(0x03)
-#define IIC_SOFT_SDA_OUT_MASK  GPIO_P23_MODE_SEL(0x01)
-#define IIC_SOFT_SDA_PULL_REG  P2_PU
-#define IIC_SOFT_SDA_PULL_MASK GPIO_P23_PULL_UP(0x01)
-#define IIC_SOFT_SDA_FOUT_REG  FOUT_S23
-
-/* 总线延时，48MHz 主频下 delay(4) 约为几百 ns */
-#define IIC_SOFT_DELAY() delay(4)
-
-/* 7 位器件地址 + 读写位，组成完整的 8 位设备地址 */
-#define IIC_SOFT_DEV_ADDR_W(dev) ((u8)(((u8)(dev) << 1) | 0x00)) /* 写 */
-#define IIC_SOFT_DEV_ADDR_R(dev) ((u8)(((u8)(dev) << 1) | 0x01)) /* 读 */
-
 /* SDA配置为输入模式 */
 static void iic_soft_sda_in(void)
 {
@@ -66,7 +42,7 @@ void iic_soft_config(void)
  * @param  None
  * @retval None
  */
-static void iic_soft_start(void)
+void iic_soft_start(void)
 {
     // 起始时，系统时钟线（SCLK）和系统数据线（SDATA）都处于高电平
     iic_soft_sda_out(); // SDA线输出
@@ -86,7 +62,7 @@ static void iic_soft_start(void)
  * @param  None
  * @retval None
  */
-static void iic_soft_stop(void)
+void iic_soft_stop(void)
 {
     iic_soft_sda_out(); // SDA线输出
 
@@ -109,7 +85,7 @@ static void iic_soft_stop(void)
  * @param  None
  * @retval 0:收到应答  1:超时无应答
  */
-static u8 iic_soft_wait_ack(void)
+u8 iic_soft_wait_ack(void)
 {
     u8 timeout = 0;
 
@@ -170,11 +146,11 @@ static void iic_soft_nack(void)
 }
 
 /**
- * @brief  iic soft send 1 byte data function
- * @param  dat : 待发送的字节
+ * @brief  iic soft write 1 byte data function
+ * @param  dat : 待写入的字节
  * @retval None
  */
-static void iic_soft_send_byte(u8 dat)
+void iic_soft_write_byte(u8 dat)
 {
     u8 i;
 
@@ -207,7 +183,7 @@ static void iic_soft_send_byte(u8 dat)
  * @param  ack : 1--读完后发送ACK；0--读完后发送NACK
  * @retval 读到的1个字节
  */
-static u8 iic_soft_read_byte(u8 ack)
+u8 iic_soft_read_byte(u8 ack)
 {
     u8 i;
     u8 receive = 0;
@@ -241,16 +217,16 @@ static u8 iic_soft_read_byte(u8 ack)
  * @param  reg_addr_bytes : 寄存器地址字节数，1--单字节；2--双字节
  * @retval 0--成功，1--失败
  */
-static u8 iic_soft_send_reg_addr(u16 reg_addr, u8 reg_addr_bytes)
+u8 iic_soft_write_reg_addr(u16 reg_addr, u8 reg_addr_bytes)
 {
     if (reg_addr_bytes >= 2) {
-        iic_soft_send_byte((u8)(reg_addr >> 8)); // 发送高地址
+        iic_soft_write_byte((u8)(reg_addr >> 8)); // 发送高地址
         if (iic_soft_wait_ack()) {
             return 1;
         }
     }
 
-    iic_soft_send_byte((u8)(reg_addr & 0xFF)); // 发送低地址
+    iic_soft_write_byte((u8)(reg_addr & 0xFF)); // 发送低地址
     if (iic_soft_wait_ack()) {
         return 1;
     }
@@ -269,32 +245,37 @@ static u8 iic_soft_send_reg_addr(u16 reg_addr, u8 reg_addr_bytes)
  */
 u8 iic_soft_read(u8 dev_addr, u16 reg_addr, u8 reg_addr_bytes, u8 *buf, u16 len)
 {
+    u8 ret = 0;
     u16 i;
 
     // 入参校验：缓冲区/长度非0，寄存器地址字节数只能为1或2
     if ((buf == 0) || (len == 0) ||
         ((reg_addr_bytes != 1) && (reg_addr_bytes != 2))) {
-        return 1; // 入参非法
+        ret = 1; // 入参非法
+        goto iic_soft_read_err;
     }
 
     // 起始信号
     iic_soft_start();
 
     // 发送器件地址(写)
-    iic_soft_send_byte(IIC_SOFT_DEV_ADDR_W(dev_addr));
+    iic_soft_write_byte(IIC_SOFT_DEV_ADDR_W(dev_addr));
     if (iic_soft_wait_ack()) {
+        ret = 2;
         goto iic_soft_read_err;
     }
 
     // 发送寄存器地址
-    if (iic_soft_send_reg_addr(reg_addr, reg_addr_bytes)) {
+    if (iic_soft_write_reg_addr(reg_addr, reg_addr_bytes)) {
+        ret = 3;
         goto iic_soft_read_err;
     }
 
     // 重新起始，进入读模式
     iic_soft_start();
-    iic_soft_send_byte(IIC_SOFT_DEV_ADDR_R(dev_addr));
+    iic_soft_write_byte(IIC_SOFT_DEV_ADDR_R(dev_addr));
     if (iic_soft_wait_ack()) {
+        ret = 4;
         goto iic_soft_read_err;
     }
 
@@ -303,14 +284,9 @@ u8 iic_soft_read(u8 dev_addr, u16 reg_addr, u8 reg_addr_bytes, u8 *buf, u16 len)
         buf[i] = iic_soft_read_byte((i == (len - 1)) ? 0 : 1);
     }
 
-    // 停止信号
-    iic_soft_stop();
-
-    return 0;
-
 iic_soft_read_err:
     iic_soft_stop(); // 出错也要释放总线
-    return 1;
+    return ret;
 }
 
 /**
@@ -320,47 +296,77 @@ iic_soft_read_err:
  * @param  reg_addr_bytes : 寄存器地址字节数，1--单字节(如24C02)；2--双字节(如24C512)
  * @param  buf            : 待写入数据的缓冲区首地址
  * @param  len            : 要写入的字节数
- * @retval 0--成功，1--失败
+ * @retval 0--成功，非0--对应的错误码
  */
 u8 iic_soft_write(u8 dev_addr, u16 reg_addr, u8 reg_addr_bytes, const u8 *buf,
                   u16 len)
 {
+    u8 ret = 0;
     u16 i;
 
     // 入参校验：缓冲区/长度非0，寄存器地址字节数只能为1或2
     if ((buf == 0) || (len == 0) ||
         ((reg_addr_bytes != 1) && (reg_addr_bytes != 2))) {
-        return 1; // 入参非法
+        ret = 1; // 入参非法
+        goto iic_soft_write_err;
     }
 
     // 起始信号
     iic_soft_start();
 
     // 发送器件地址(写)
-    iic_soft_send_byte(IIC_SOFT_DEV_ADDR_W(dev_addr));
+    iic_soft_write_byte(IIC_SOFT_DEV_ADDR_W(dev_addr));
     if (iic_soft_wait_ack()) {
+        ret = 2; // 发送器件地址失败
         goto iic_soft_write_err;
     }
 
     // 发送寄存器地址
-    if (iic_soft_send_reg_addr(reg_addr, reg_addr_bytes)) {
+    if (iic_soft_write_reg_addr(reg_addr, reg_addr_bytes)) {
+        ret = 3; // 发送寄存器地址失败
         goto iic_soft_write_err;
     }
 
     // 依次写入数据
     for (i = 0; i < len; i++) {
-        iic_soft_send_byte(buf[i]);
+        iic_soft_write_byte(buf[i]);
         if (iic_soft_wait_ack()) {
+            ret = 4; // 写入数据失败
             goto iic_soft_write_err;
         }
     }
 
-    // 停止信号
-    iic_soft_stop();
-
-    return 0;
-
 iic_soft_write_err:
     iic_soft_stop(); // 出错也要释放总线
-    return 1;
+    return ret;
+}
+
+/**
+ * @brief  轮询等待器件就绪（等待器件内部的写周期结束）
+ *         对 24Cxx 等 EEPROM，写入后芯片内部需要最多 5ms 完成擦写，
+ *         此期间器件不响应任何命令，必须等它重新应答后才能继续访问
+ * @param  dev_addr   : 器件地址(7位，内部自动左移并补上写位)
+ * @param  timeout_ms : 等待超时时间(单位: ms)，由调用者按器件手册配置
+ * @retval 0--器件已就绪(收到应答)，1--超时(器件一直不响应)
+ */
+u8 iic_soft_wait_ready(u8 dev_addr, u16 timeout_ms)
+{
+    u16 cnt = 0;
+
+    do {
+        iic_soft_start();
+        iic_soft_write_byte(IIC_SOFT_DEV_ADDR_W(dev_addr));
+
+        // 收到应答，说明器件的写周期已结束，可以继续访问
+        if (0 == iic_soft_wait_ack()) {
+            iic_soft_stop();
+            return 0;
+        }
+        iic_soft_stop(); // 未应答，作废本次访问，释放总线后重试
+
+        delay_ms(1); // 每次重试间隔 1ms（delay_ms 内部会喂狗）
+        cnt++;
+    } while (cnt < timeout_ms);
+
+    return 1; // 超时：器件一直不响应
 }

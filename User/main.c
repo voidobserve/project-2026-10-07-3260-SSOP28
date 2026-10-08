@@ -26,6 +26,8 @@
 #include "tmr2.h"
 #include "uart0.h"
 
+#include "eeprom_24cxx.h"
+
 #include "key_driver.h"
 #include "io_key.h"
 
@@ -77,7 +79,15 @@ void user_init(void)
     engine_speed_scan_config(); // 发动机转速扫描的配置
 #endif
 
+    // 这条初始化需要放在iic初始化之前,先将时钟ic的片选拉低
     aip1302_config(); // 时钟IC
+    // TEST ONLY 单独测试eeprom时,确保时钟IC的片选拉低
+    // // CE脚
+    // P2_MD0 &= ~GPIO_P21_MODE_SEL(0x3); // 清空配置
+    // P2_MD0 |= GPIO_P21_MODE_SEL(0x1);  // 输出模式
+    // FOUT_S21 = GPIO_FOUT_AF_FUNC;
+    // P21 = 0;
+    eeprom_24cxx_config();
 
 #if (FUEL_CAPACITY_SCAN_ENABLE || BATTERY_SCAN_ENABLE)
     adc_config();
@@ -105,6 +115,11 @@ void main(void)
     /* 用户代码初始化接口 */
     user_init();
 
+    test_eeprom_24cxx();
+    // test_eeprom_24cxx_addr();
+    // test_eeprom_24cxx();
+    // test_eeprom_24cxx_addr();
+
     /* 系统主循环 */
     while (1) {
 #if USER_DEBUG_ENABLE
@@ -115,6 +130,9 @@ void main(void)
 
 #if AIP1302_TEST_ENABLE
         aip1302_test();
+#endif
+#if EEPROM_24CXX_TEST_ENABLE
+        test_eeprom_24cxx();
 #endif
 
 #if PIN_LEVEL_SCAN_ENABLE
