@@ -451,6 +451,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\Hardware\aip3368_driver.c</FilePath>
             </File>
+            <File>
+              <FileName>aip3368h_display.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Hardware\aip3368h_display.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

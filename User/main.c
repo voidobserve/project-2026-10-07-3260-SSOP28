@@ -124,6 +124,9 @@ void main(void)
     /* 用户代码初始化接口 */
     user_init();
 
+
+    test_aip3368_display();
+
     /* 系统主循环 */
     while (1) {
 #if USER_DEBUG_ENABLE
@@ -181,6 +184,7 @@ void main(void)
 
         instrument_info_report_handle();
 #endif
+
 
         aip3368h_module_display();
 
