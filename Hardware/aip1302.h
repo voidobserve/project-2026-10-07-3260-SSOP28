@@ -4,7 +4,7 @@
 #include "include.h" // 使用芯片官方提供的头文件
 
 #define IC_1302_ENABLE      1
-#define AIP1302_TEST_ENABLE 1 // TEST ONLY
+#define AIP1302_TEST_ENABLE 0 // TEST ONLY
 
 // 每隔多久，从时钟IC读取一次时间，更新显示
 #define AIP1302_UPDATE_TIME_INTERVAL 1000 // 单位 ms

@@ -3,7 +3,7 @@
 
 #include "typedef.h"
 
-#define EEPROM_24CXX_TEST_ENABLE 1
+#define EEPROM_24CXX_TEST_ENABLE 0
 
 /*
 	器件地址，不包含读写操作位

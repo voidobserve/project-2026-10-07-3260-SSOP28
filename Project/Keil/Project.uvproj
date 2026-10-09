@@ -446,6 +446,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\Hardware\eeprom_24cxx.c</FilePath>
             </File>
+            <File>
+              <FileName>aip3368_driver.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Hardware\aip3368_driver.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -12,6 +12,7 @@
 
 #include "aip1302.h" // aip1302_update_time_interval
 #include "eeprom_24cxx.h"
+#include "aip3368_driver.h" 
 
 #if USER_DEBUG_ENABLE
 // #include "aip1302.h" // TEST ONLY 测试完成后，应该删除
@@ -67,6 +68,8 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
     // 周期中断
     if (TMR1_CONH & TMR_PRD_PND(0x1)) {
         TMR1_CONH |= TMR_PRD_PND(0x1); // 清除pending
+
+        aip3368h_refresh_time_add();
 
         adc_channel_switch_by_isr(); // ADC通道切换
 

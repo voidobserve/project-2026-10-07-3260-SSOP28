@@ -20,13 +20,15 @@
 #include <string.h>
 #include "user_config.h"
 
-#include "adc.h"
 #include "aip1302.h"
+#include "eeprom_24cxx.h"
+#include "aip3368_driver.h"
+
+#include "adc.h"
+
 #include "tmr1.h"
 #include "tmr2.h"
 #include "uart0.h"
-
-#include "eeprom_24cxx.h"
 
 #include "key_driver.h"
 #include "io_key.h"
@@ -59,7 +61,6 @@ void user_init(void)
 {
 #if USER_DEBUG_ENABLE
     uart0_init();
-
     printf("sys reset\n");
 #endif
 
@@ -89,6 +90,14 @@ void user_init(void)
     // P21 = 0;
     eeprom_24cxx_config();
 
+    // led供电控制脚
+    P1_MD0 &= ~GPIO_P10_MODE_SEL(0x03); // 清空配置
+    P1_MD0 |= GPIO_P10_MODE_SEL(0x01);  // 输出模式
+    FOUT_S10 = GPIO_FOUT_AF_FUNC;
+    P10 = 1; // 使能led供电
+
+    aip3368h_module_init();
+
 #if (FUEL_CAPACITY_SCAN_ENABLE || BATTERY_SCAN_ENABLE)
     adc_config();
 #endif
@@ -115,11 +124,6 @@ void main(void)
     /* 用户代码初始化接口 */
     user_init();
 
-    test_eeprom_24cxx();
-    // test_eeprom_24cxx_addr();
-    // test_eeprom_24cxx();
-    // test_eeprom_24cxx_addr();
-
     /* 系统主循环 */
     while (1) {
 #if USER_DEBUG_ENABLE
@@ -128,12 +132,7 @@ void main(void)
 
         WDT_KEY = WDT_KEY_VAL(0xAA); // 喂狗并清除 wdt_pending
 
-#if AIP1302_TEST_ENABLE
-        aip1302_test();
-#endif
-#if EEPROM_24CXX_TEST_ENABLE
-        test_eeprom_24cxx();
-#endif
+        // P10 = !P10;
 
 #if PIN_LEVEL_SCAN_ENABLE
         pin_level_scan();
@@ -181,6 +180,16 @@ void main(void)
         instrument_info_save_handle();
 
         instrument_info_report_handle();
+#endif
+
+        aip3368h_module_display();
+
+// TEST ONLY
+#if AIP1302_TEST_ENABLE
+        aip1302_test();
+#endif
+#if EEPROM_24CXX_TEST_ENABLE
+        test_eeprom_24cxx();
 #endif
     }
 }
