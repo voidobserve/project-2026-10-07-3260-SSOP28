@@ -60,8 +60,8 @@ static void aip3368h_module_send_data(const u16 *buf, const u8 len)
 void aip3368h_module_display(void)
 {
     // 刷新间隔 单位：ms
-    // if (aip3368h_refresh_cnt < 25) {
-    if (aip3368h_refresh_cnt < 500) {
+    if (aip3368h_refresh_cnt < 25) {
+        // if (aip3368h_refresh_cnt < 500) { /* TEST ONLY */
         return;
     } else {
         aip3368h_refresh_cnt = 0;

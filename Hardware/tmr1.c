@@ -13,6 +13,7 @@
 #include "aip1302.h" // aip1302_update_time_interval
 #include "eeprom_24cxx.h"
 #include "aip3368_driver.h" 
+#include "aip3368h_display.h"
 
 #if USER_DEBUG_ENABLE
 // #include "aip1302.h" // TEST ONLY 测试完成后，应该删除
@@ -101,6 +102,15 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
 
         instrument_info_save_time_add();
 
+#if AIP3368H_DISPLAY_TEST_ENABLE
+    test_aip3368h_display_light_1ms_isr();
+    test_aip3368h_display_engine_speed_lev_1ms_isr();   
+    // test_aip3368h_display_engine_speed_frame_1ms_isr();
+    // test_aip3368h_display_engine_speed_frame_wave_1ms_isr();
+    // test_aip3368h_display_fuel_lev_1ms_isr();
+    // test_aip3368h_display_time_1ms_isr();
+    // test_aip3368h_display_mileage_1ms_isr();
+#endif
 #if AIP1302_TEST_ENABLE
         aip1302_test_1ms_isr();
 #endif

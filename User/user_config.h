@@ -4,8 +4,7 @@
 
 // #include "include.h" // 使用芯片官方提供的头文件
 // #include "typedef_struct.h" // 包含结构体类型和别名的定义
-
-#define ARRAY_SIZE(arry) (sizeof(arry) / sizeof(arry[0]))
+ 
 
 #define USER_DEBUG_ENABLE 1
 #if USER_DEBUG_ENABLE

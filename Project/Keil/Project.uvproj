@@ -321,7 +321,7 @@
             <ACallAJmp>0</ACallAJmp>
             <InterruptVectorAddress>12</InterruptVectorAddress>
             <VariousControls>
-              <MiscControls>interval(3)</MiscControls>
+              <MiscControls>interval(3) </MiscControls>
               <Define></Define>
               <Undefine></Undefine>
               <IncludePath>..\..\Libraries\Include;..\..\User;..\..\User\lib;..\..\Hardware</IncludePath>
