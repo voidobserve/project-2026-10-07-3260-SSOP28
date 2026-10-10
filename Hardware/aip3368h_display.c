@@ -1,8 +1,20 @@
 #include "aip3368h_display.h"
 #include "aip3368_driver.h"
 
+void aip3368h_display_left_turn_light(u8 is_display)
+{
+
+}
+
+
+void aip3368h_display_right_turn_light(u8 is_display)
+{
+    
+}
+
+
 #if AIP3368H_DISPLAY_TEST_ENABLE
-void test_aip3368_display(void)
+void test_aip3368h_display(void)
 {
     // aip3368h_display_buff[0] |= 0x01 << 0; // 发动机转速，8.5 对应的指示灯
     // aip3368h_display_buff[0] |= 0x01 << 1; // 发动机转速，9 对应的指示灯

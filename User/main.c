@@ -125,7 +125,7 @@ void main(void)
     user_init();
 
 
-    test_aip3368_display();
+    test_aip3368h_display();
 
     /* 系统主循环 */
     while (1) {
