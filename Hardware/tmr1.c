@@ -2,7 +2,7 @@
 #include "include.h"
 #include "user_config.h"
 
-#include "mileage.h" 
+#include "mileage.h"
 #include "io_key.h"
 #include "fuel_capacity.h"
 #include "battery.h"
@@ -11,7 +11,7 @@
 
 #include "aip1302.h" // aip1302_update_time_interval
 #include "eeprom_24cxx.h"
-#include "aip3368_driver.h" 
+#include "aip3368_driver.h"
 #include "aip3368h_display.h"
 
 #if USER_DEBUG_ENABLE
@@ -33,26 +33,22 @@ void tmr1_config(void)
 
     TMR_ALLCON = TMR1_CNT_CLR(0x1); // 清除计数值
 
-    // USER_TO_DO 待优化
-    TMR1_CONL &= ~TMR_PRESCALE_SEL(0x07); // 清除TMR1的预分频配置寄存器
-    TMR1_CONL |= TMR_PRESCALE_SEL(0x07);  // 定时器预分频
-    TMR1_CONL &= ~TMR_MODE_SEL(0x03);     // 清除TMR1的模式配置寄存器
-    TMR1_CONL |= TMR_MODE_SEL(
-        0x01); // 配置TMR1的模式为计数器模式，最后对系统时钟的脉冲进行计数
-
-    TMR1_CONH &= ~TMR_PRD_PND(0x01); // 清除TMR1的计数标志位，表示未完成计数
-    TMR1_CONH |= TMR_PRD_IRQ_EN(1);  // 使能TMR1的计数中断
-
     // 配置TMR1的计数周期
     TMR1_PRH = TMR_PERIOD_VAL_H((TMR1_PERIOD >> 8) & 0xFF); // 周期值
     TMR1_PRL = TMR_PERIOD_VAL_L((TMR1_PERIOD >> 0) & 0xFF);
 
-    // TMR1_CONL &= ~(TMR_SOURCE_SEL(0x07)); // 清除TMR1的时钟源配置寄存器
-    // TMR1_CONL |= TMR_SOURCE_SEL(0x05);    // 配置TMR1的时钟源，不用任何时钟
+    TMR1_CONH &= ~TMR_PRD_PND(0x01); // 清除TMR1的计数标志位，表示未完成计数
+    TMR1_CONH |= TMR_PRD_IRQ_EN(1);  // 使能TMR1的计数中断
 
-    // 重新给TMR1配置时钟
-    TMR1_CONL &= ~(TMR_SOURCE_SEL(0x07)); // 清除定时器的时钟源配置寄存器
-    TMR1_CONL |= TMR_SOURCE_SEL(0x06);    // 配置定时器的时钟源，使用系统时钟
+    TMR1_CONL &= ~(TMR_PRESCALE_SEL(0x07) | // 清除TMR1的预分频配置寄存器
+                   TMR_SOURCE_SEL(0x07) |   // 清除定时器的时钟源配置寄存器
+                   TMR_MODE_SEL(0x03));     // 清除TMR1的模式配置寄存器
+
+    TMR1_CONL |=
+        TMR_SOURCE_SEL(0x06) |   // 配置定时器的时钟源，使用系统时钟
+        TMR_PRESCALE_SEL(0x07) | // 定时器预分频
+        TMR_MODE_SEL(
+            0x01); // 配置TMR1的模式为计数器模式，最后对系统时钟的脉冲进行计数
 
     __EnableIRQ(TMR1_IRQn); // 使能中断
 }
@@ -102,15 +98,15 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
         instrument_info_save_time_add();
 
 #if AIP3368H_DISPLAY_TEST_ENABLE
-    test_aip3368h_display_light_1ms_isr();
-    // test_aip3368h_display_speed_1ms_isr();
-    // test_aip3368h_display_gear_1ms_isr();
-    // test_aip3368h_display_engine_speed_lev_1ms_isr();   
-    // test_aip3368h_display_engine_speed_frame_1ms_isr();
-    // test_aip3368h_display_engine_speed_frame_wave_1ms_isr();
-    // test_aip3368h_display_fuel_lev_1ms_isr();
-    // test_aip3368h_display_time_1ms_isr();
-    // test_aip3368h_display_mileage_1ms_isr();
+        test_aip3368h_display_light_1ms_isr();
+        // test_aip3368h_display_speed_1ms_isr();
+        // test_aip3368h_display_gear_1ms_isr();
+        // test_aip3368h_display_engine_speed_lev_1ms_isr();
+        // test_aip3368h_display_engine_speed_frame_1ms_isr();
+        // test_aip3368h_display_engine_speed_frame_wave_1ms_isr();
+        // test_aip3368h_display_fuel_lev_1ms_isr();
+        // test_aip3368h_display_time_1ms_isr();
+        // test_aip3368h_display_mileage_1ms_isr();
 #endif
 #if AIP1302_TEST_ENABLE
         aip1302_test_1ms_isr();

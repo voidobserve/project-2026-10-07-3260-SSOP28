@@ -42,6 +42,9 @@
 #include "engine_speed_scan.h"
 #include "fuel_capacity.h"
 
+volatile u8 irq_was_enabled = 0;
+
+
 #if USER_DEBUG_ENABLE
 
 /**

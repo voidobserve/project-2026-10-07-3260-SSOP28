@@ -2,11 +2,8 @@
 #define __SPEED_SCAN_H__
 
 #include "include.h" // 使用芯片官方提供的头文件
-// #include "user_include.h" // 包含自定义的头文件
 
-// ======================================================
-// 检测时速所需的配置：
-#define SPEED_SCAN_PIN P15 // 检测时速的引脚
+#define SPEED_SCAN_PIN P01 // 检测时速的引脚
 
 /*
     检测到 多少个脉冲 表示 车轮走过一圈（仅供计算时使用，并不代表真实的车轮数据）
