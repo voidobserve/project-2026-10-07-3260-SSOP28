@@ -150,6 +150,36 @@ static const aip3368h_display_mapping_t engine_speed_lev_map[] = {
     {0, 0}, {0, 1}, {0, 2},  {0, 3},  {0, 4},  {0, 5},  {0, 6},  {0, 7},
 };
 
+/*
+    指示灯和显存的映射关系
+    挡位对应的指示灯（1 ~ 6挡）
+    对应的显存：  
+*/
+static const aip3368h_display_mapping_t gear_map[] = {
+    // a 段 ~ g 段
+    {4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 4}, {4, 5}, {4, 6},
+};
+
+/*
+    指示灯和显存的映射关系
+    时速第 0 位对应的指示灯（从右往左，从0开始）
+    对应的显存：  
+*/
+static const aip3368h_display_mapping_t speed_bit_0_map[] = {
+    // a 段 ~ g 段
+    {6, 0}, {6, 1}, {6, 2}, {6, 3}, {6, 4}, {6, 5}, {6, 6},
+};
+
+/*
+    指示灯和显存的映射关系
+    时速第 1 位对应的指示灯（从右往左，从0开始）
+    对应的显存：  
+*/
+static const aip3368h_display_mapping_t speed_bit_1_map[] = {
+    // a 段 ~ g 段
+    {6, 9}, {6, 10}, {6, 11}, {6, 12}, {6, 13}, {6, 14}, {6, 15},
+};
+
 void aip3368h_display_left_turn_light(u8 is_display)
 {
     if (is_display) {
@@ -586,6 +616,205 @@ void aip3368h_display_engine_speed_lev(u8 is_display, u16 engine_speed_lev)
     }
 }
 
+// n挡图标对应的指示灯
+void aip3368h_display_gear_n_light(u8 is_display)
+{
+    if (is_display) {
+        AIP3368H_DISPLAY_BUF_SET(5, 10);
+    } else {
+        AIP3368H_DISPLAY_BUF_CLR(5, 10);
+    }
+}
+
+/**
+ * @brief 
+ * 
+ * @param is_display 
+ * @param gear 
+ *      0： N挡
+ *      1： 1挡
+ *      ...
+ *      6： 6挡
+ *      255: 没有挡位，不显示
+ */
+void aip3368h_display_gear(u8 gear)
+{
+    u8 i;
+    u8 segment_code;
+
+    aip3368h_display_gear_n_light(0);
+    // 遍历 a ~ g 段，清空对应显示
+    for (i = 0; i < 7; i++) {
+        AIP3368H_DISPLAY_BUF_CLR(gear_map[i].buff_index,
+                                 gear_map[i].bit_offset);
+    }
+
+    if (0 == gear) {
+        aip3368h_display_gear_n_light(1);
+    } else if (gear <= 6) {
+        segment_code = digit_segment_code[gear];
+        for (i = 0; i < 7; i++) {
+            // 检查该段是否需要点亮 (segment_code的对应bit是否为1)
+            if (segment_code & (0x01 << i)) {
+                AIP3368H_DISPLAY_BUF_SET(gear_map[i].buff_index,
+                                         gear_map[i].bit_offset);
+            }
+        }
+    }
+}
+
+void aip3368h_display_mph_light(u8 is_display)
+{
+    if (is_display) {
+        AIP3368H_DISPLAY_BUF_SET(5, 14);
+    } else {
+        AIP3368H_DISPLAY_BUF_CLR(5, 14);
+    }
+}
+
+void aip3368h_display_kmh_light(u8 is_display)
+{
+    if (is_display) {
+        AIP3368H_DISPLAY_BUF_SET(5, 15);
+    } else {
+        AIP3368H_DISPLAY_BUF_CLR(5, 15);
+    }
+}
+
+/**
+ * @brief 时速对应的数据位
+ * 
+ * @param is_display 
+ *         0： 不显示，参数 bit_value 无效
+ *         1： 显示
+ * @param bit_index 0 ~ 2
+ *         0： 第 0 位，个位
+ *         1： 第 1 位，十位
+ *         2： 第 2 位，百位，参数 bit_value 无效，百位只有b段和c段数码管
+ * @param bit_value 0 ~ 9
+ */
+void aip3368h_display_speed_bit(u8 is_display, u8 bit_index, u8 bit_value)
+{
+    u8 i;
+    u8 segment_code;
+    aip3368h_display_mapping_t *buf_ptr = 0;
+
+    if (bit_index < 2) {
+        // 第 0 位、第 1 位才使用到段码
+        segment_code = digit_segment_code[bit_value];
+    }
+
+    switch (bit_index) {
+    case 0:
+        buf_ptr = speed_bit_0_map;
+        break;
+    case 1:
+        buf_ptr = speed_bit_1_map;
+        break;
+    case 2:
+        if (is_display) {
+            AIP3368H_DISPLAY_BUF_SET(5, 2);
+            AIP3368H_DISPLAY_BUF_SET(5, 3);
+        } else {
+            AIP3368H_DISPLAY_BUF_CLR(5, 2);
+            AIP3368H_DISPLAY_BUF_CLR(5, 3);
+        }
+
+        // 函数直接返回，不再处理后续操作
+        return;
+        break;
+    default:
+        break;
+    }
+
+    for (i = 0; i < 7; i++) {
+        if (is_display && (segment_code & (0x01 << i))) {
+            AIP3368H_DISPLAY_BUF_SET(buf_ptr[i].buff_index,
+                                     buf_ptr[i].bit_offset);
+        } else {
+            AIP3368H_DISPLAY_BUF_CLR(buf_ptr[i].buff_index,
+                                     buf_ptr[i].bit_offset);
+        }
+    }
+}
+
+/**
+ * @brief 时速数码管显示时速
+ *
+ * @param speed 0 ~ 199，如果超过了 199，会显示 199
+ *      数码管从右往左排序
+ *      参数小于 10 ，只有第 0 位数码管在显示
+ *      参数小于 100 ，只有第 0、1 位数码管在显示
+ *
+ */
+void aip3368h_display_speed(u8 speed)
+{
+    /*
+        根据传参，先计算有多少位有效数字，
+        再根据有效数字进行对应显示
+    */
+    // 传参的有效数据位：
+    u8 valid_bits = 0;
+    u16 tmp = 0; // 计算有效数据位使用的临时变量
+    u8 i;
+
+    if (speed > 199) {
+        // 在这里限制要显示的时速不能超过 199
+        speed = 199;
+    }
+    tmp = speed;
+    while (1) {
+        valid_bits++; // 刚进入，默认至少有1位有效数据
+        tmp /= 10;
+        if (tmp == 0) {
+            break;
+        }
+    }
+
+#if USER_DEBUG_ENABLE
+    // printf("valid_bits == %u\n", (u16)valid_bits);
+#endif
+
+    // 遍历第 0 ~ 2 位数码管
+    for (i = 0; i <= 2; i++) {
+        if (i < valid_bits) {
+            // 遍历第 0 ~ valid_bits（最大为2） 位数码管
+            aip3368h_display_speed_bit(1, i, speed % 10);
+            speed /= 10;
+        } else {
+            // 不让当前位对应的数码管进行显示
+            aip3368h_display_speed_bit(0, i, 0);
+        }
+    }
+}
+
+void aip3368h_display_abs_light(u8 is_display)
+{
+    if (is_display) {
+        AIP3368H_DISPLAY_BUF_SET(5, 11);
+    } else {
+        AIP3368H_DISPLAY_BUF_CLR(5, 11);
+    }
+}
+
+void aip3368h_display_engine_err_light(u8 is_display)
+{
+    if (is_display) {
+        AIP3368H_DISPLAY_BUF_SET(5, 13);
+    } else {
+        AIP3368H_DISPLAY_BUF_CLR(5, 13);
+    }
+}
+
+void aip3368h_display_bat_err_light(u8 is_display)
+{
+    if (is_display) {
+        AIP3368H_DISPLAY_BUF_SET(5, 12);
+    } else {
+        AIP3368H_DISPLAY_BUF_CLR(5, 12);
+    }
+}
+
 #if AIP3368H_DISPLAY_TEST_ENABLE
 /**
  * @brief 测试指示灯
@@ -619,8 +848,54 @@ void test_aip3368h_display_light_1ms_isr(void)
     // aip3368h_display_fuel_empty_light(is_display);
     // aip3368h_display_fuel_icon_light(is_display);
     // aip3368h_display_fuel_lev_0_red_light(is_display);
+    // aip3368h_display_gear_n_light(is_display);
+    // aip3368h_display_mph_light(is_display);
+    // aip3368h_display_kmh_light(is_display);
+    // aip3368h_display_abs_light(is_display);
+    // aip3368h_display_engine_err_light(is_display);
+    // aip3368h_display_bat_err_light(is_display);
 
     is_display = !is_display;
+}
+
+#if 0
+
+void test_aip3368h_display_speed_1ms_isr(void)
+{
+    static u16 cnt = 0; // 计数，用于控制显示的频率
+    static u8 speed = 0;
+    cnt++;
+    if (cnt < 200) {
+        return;
+    } else {
+        cnt = 0;
+    }
+
+    aip3368h_display_speed(speed);
+    speed++;
+    if (speed > 200) {
+        speed = 0;
+    }
+}
+
+void test_aip3368h_display_gear_1ms_isr(void)
+{
+    static u16 cnt = 0; // 计数，用于控制显示的频率
+    static u8 gear = 0;
+    cnt++;
+    if (cnt < 500) {
+        return;
+    } else {
+        cnt = 0;
+    }
+
+    aip3368h_display_gear(gear);
+    gear++;
+    if (gear > 6) {
+        gear = 255;
+    } else if (gear == 255) {
+        gear = 0;
+    }
 }
 
 void test_aip3368h_display_engine_speed_lev_1ms_isr(void)
@@ -640,8 +915,6 @@ void test_aip3368h_display_engine_speed_lev_1ms_isr(void)
         lev = 0;
     }
 }
-
-#if 0
 
 void test_aip3368h_display_engine_speed_frame_1ms_isr(void)
 {
@@ -683,11 +956,11 @@ void test_aip3368h_display_engine_speed_frame_1ms_isr(void)
  */
 void test_aip3368h_display_engine_speed_frame_wave_1ms_isr(void)
 {
-    static u16 cnt = 0; // 计数，用于控制显示的频率
-    static s8 dir = 0;  // 0：向两侧扩散，1：向中间回收
-    static s8 spread = -1; // -1：中间三个灯，0..8：向两侧扩散/回收
+    static u16 cnt = 0;       // 计数，用于控制显示的频率
+    static s8 dir = 0;        // 0：向两侧扩散，1：向中间回收
+    static s8 spread = -1;    // -1：中间三个灯，0..8：向两侧扩散/回收
     const s8 center_idx = 10; // 中间位置
-    const s8 max_spread = 8; // 扩散到边界位置
+    const s8 max_spread = 8;  // 扩散到边界位置
     u8 i;
 
     cnt++;
@@ -710,10 +983,14 @@ void test_aip3368h_display_engine_speed_frame_wave_1ms_isr(void)
             spread = 0;
         } else {
             // 两个灯往左侧移动，两个灯往右侧移动
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx - 1 - spread);
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx - 2 - spread);
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx + 1 + spread);
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx + 2 + spread);
+            aip3368h_display_engine_speed_frame_by_idx(1,
+                                                       center_idx - 1 - spread);
+            aip3368h_display_engine_speed_frame_by_idx(1,
+                                                       center_idx - 2 - spread);
+            aip3368h_display_engine_speed_frame_by_idx(1,
+                                                       center_idx + 1 + spread);
+            aip3368h_display_engine_speed_frame_by_idx(1,
+                                                       center_idx + 2 + spread);
 
             if (spread >= max_spread) {
                 dir = 1;
@@ -732,10 +1009,14 @@ void test_aip3368h_display_engine_speed_frame_wave_1ms_isr(void)
             spread = 0;
         } else {
             // 碰到边界后，直接开始向中间回收，不再多停一拍
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx - 1 - spread);
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx - 2 - spread);
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx + 1 + spread);
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx + 2 + spread);
+            aip3368h_display_engine_speed_frame_by_idx(1,
+                                                       center_idx - 1 - spread);
+            aip3368h_display_engine_speed_frame_by_idx(1,
+                                                       center_idx - 2 - spread);
+            aip3368h_display_engine_speed_frame_by_idx(1,
+                                                       center_idx + 1 + spread);
+            aip3368h_display_engine_speed_frame_by_idx(1,
+                                                       center_idx + 2 + spread);
 
             if (spread <= 0) {
                 dir = 0;
@@ -746,7 +1027,7 @@ void test_aip3368h_display_engine_speed_frame_wave_1ms_isr(void)
         }
     }
 }
- 
+
 void test_aip3368h_display_fuel_lev_1ms_isr(void)
 {
     static u16 cnt = 0; // 计数，用于控制显示的频率

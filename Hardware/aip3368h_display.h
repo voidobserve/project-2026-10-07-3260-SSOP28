@@ -4,7 +4,7 @@
 #include "typedef.h"
 
 // TEST ONLY
-#define AIP3368H_DISPLAY_TEST_ENABLE 1
+#define AIP3368H_DISPLAY_TEST_ENABLE 0
 
 #define AIP3368H_DISPLAY_BUF_SET(idx, bit_offset)                              \
     (aip3368h_display_buff[(idx)] |= (0x01 << (bit_offset)))
@@ -43,13 +43,14 @@ void aip3368h_display_clock_light(u8 is_display);
 void aip3368h_display_time_colon_light(u8 is_display);
 void aip3368h_display_time_hour(u8 is_display, u8 hour);
 void aip3368h_display_time_minute(u8 is_display, u8 minute);
- 
+
 void aip3368h_display_mileage_point_light(u8 is_display);
 void aip3368h_display_trip_light(u8 is_display);
 void aip3368h_display_odo_light(u8 is_display);
 void aip3368h_display_km_light(u8 is_display);
 void aip3368h_display_mile_light(u8 is_display);
 void aip3368h_display_mileage_bit_x(u8 is_display, u8 bit_x, u8 num);
+void aip3368h_display_mileage(u32 mileage);
 
 void aip3368h_display_fuel_full_light(u8 is_display);
 void aip3368h_display_fuel_empty_light(u8 is_display);
@@ -59,8 +60,22 @@ void aip3368h_display_fuel_lev(u8 is_display, u8 fuel_lev);
 
 void aip3368h_display_engine_speed_frame_by_idx(u8 is_display, u8 idx);
 
+void aip3368h_display_gear_n_light(u8 is_display);
+void aip3368h_display_gear(u8 gear);
+
+void aip3368h_display_mph_light(u8 is_display);
+void aip3368h_display_kmh_light(u8 is_display);
+void aip3368h_display_speed_bit(u8 is_display, u8 bit_index, u8 bit_value);
+void aip3368h_display_speed(u8 speed);
+
+void aip3368h_display_abs_light(u8 is_display);
+void aip3368h_display_engine_err_light(u8 is_display);
+void aip3368h_display_bat_err_light(u8 is_display);
+
 #if AIP3368H_DISPLAY_TEST_ENABLE
 void test_aip3368h_display_light_1ms_isr(void);
+void test_aip3368h_display_speed_1ms_isr(void);
+void test_aip3368h_display_gear_1ms_isr(void);
 void test_aip3368h_display_engine_speed_lev_1ms_isr(void);
 void test_aip3368h_display_engine_speed_frame_1ms_isr(void);
 void test_aip3368h_display_engine_speed_frame_wave_1ms_isr(void);
