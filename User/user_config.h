@@ -12,7 +12,7 @@
 #define TOUCH_KEY_ENABLE 0 // 是否使能触摸按键检测功能
 
 #define SPEED_SCAN_ENABLE         1 // 是否使能速度检测功能
-#define ENGINE_SPEED_SCAN_ENABLE  0 // 是否使能发动机转速检测功能
+#define ENGINE_SPEED_SCAN_ENABLE  1 // 是否使能发动机转速检测功能
 #define BATTERY_SCAN_ENABLE       0 // 是否使能电池检测功能
 #define FUEL_CAPACITY_SCAN_ENABLE 0 // 是否使能油量检测功能
 

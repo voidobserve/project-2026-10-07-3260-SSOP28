@@ -177,9 +177,7 @@ void main(void)
 #endif
         }
  
-        instrument_info_save_handle();
-
-        instrument_info_report_handle();
+        instrument_info_save_handle(); 
 #endif
 
         aip3368h_module_display();
