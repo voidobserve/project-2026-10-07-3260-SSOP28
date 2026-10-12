@@ -133,8 +133,6 @@ void main(void)
 
         WDT_KEY = WDT_KEY_VAL(0xAA); // 喂狗并清除 wdt_pending
 
-        // P10 = !P10;
-
 #if PIN_LEVEL_SCAN_ENABLE
         pin_level_scan();
 #endif

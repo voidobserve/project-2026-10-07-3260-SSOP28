@@ -18,7 +18,7 @@
 #define BATTERY_SCAN_ENABLE       0 // 是否使能电池检测功能
 #define FUEL_CAPACITY_SCAN_ENABLE 0 // 是否使能油量检测功能
 
-#define PIN_LEVEL_SCAN_ENABLE 0 // 是否使能引脚电平检测功能
+#define PIN_LEVEL_SCAN_ENABLE 1 // 是否使能引脚电平检测功能
 
 #define USE_INTERNAL_FLASH_SAVE_DATA 0
 

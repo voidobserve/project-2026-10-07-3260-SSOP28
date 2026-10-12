@@ -54,10 +54,10 @@ typedef struct
     u8 time_hour;    // 小时
     u8 time_minute;  // 分钟
 
-    u8 left_turn_valid;         // 左转灯是否有效
-    u8 right_turn_valid;        // 右转灯是否有效
-    u8 temp_of_water_err_valid; // 水温异常提示是否有效
-    u8 high_beam_valid;         // 远光灯是否有效
+    u8 left_turn_valid;  // 左转灯是否有效
+    u8 right_turn_valid; // 右转灯是否有效
+    u8 low_beam_valid;   // 近光灯是否有效
+    u8 high_beam_valid;  // 远光灯是否有效
 
     u8 key_event; // 按键事件
 } instrument_t;
