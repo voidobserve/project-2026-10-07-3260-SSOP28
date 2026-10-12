@@ -427,11 +427,6 @@
               <FilePath>..\..\Hardware\adc.c</FilePath>
             </File>
             <File>
-              <FileName>key_driver.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\Hardware\key_driver.c</FilePath>
-            </File>
-            <File>
               <FileName>aip1302.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\Hardware\aip1302.c</FilePath>

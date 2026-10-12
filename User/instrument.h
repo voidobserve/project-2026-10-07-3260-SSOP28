@@ -59,7 +59,7 @@ typedef struct
     u8 low_beam_valid;   // 近光灯是否有效
     u8 high_beam_valid;  // 远光灯是否有效
 
-    u8 key_event; // 按键事件
+    // u8 key_event; // 按键事件
 } instrument_t;
 extern volatile instrument_t instrument;
 

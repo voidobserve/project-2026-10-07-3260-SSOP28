@@ -2,8 +2,7 @@
 #include "include.h"
 #include "user_config.h"
 
-#include "mileage.h"
-#include "key_driver.h"
+#include "mileage.h" 
 #include "io_key.h"
 #include "fuel_capacity.h"
 #include "battery.h"

@@ -30,8 +30,7 @@
 #include "tmr1.h"
 #include "tmr2.h"
 #include "uart0.h"
-
-#include "key_driver.h"
+ 
 #include "io_key.h"
 
 #include "pin_level_scan.h"
@@ -138,7 +137,6 @@ void main(void)
 #endif
 
 #if IO_KEY_ENABLE
-        key_driver_scan(&io_key_para);
         io_key_handle(); // io按键处理函数
 #endif
 
