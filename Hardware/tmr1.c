@@ -4,8 +4,7 @@
 
 #include "mileage.h"
 #include "io_key.h"
-#include "fuel_capacity.h"
-#include "battery.h"
+#include "fuel_capacity.h" 
 #include "adc.h"
 #include "instrument.h"
 
@@ -89,10 +88,6 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
 
 #if FUEL_CAPACITY_SCAN_ENABLE
         fuel_capacity_scan_time_add();
-#endif
-
-#if BATTERY_SCAN_ENABLE
-        bat_scan_time_add();
 #endif
 
         instrument_info_save_time_add();

@@ -19,6 +19,7 @@
 #define PIN_DETECT_LOW_BEAM   (P04) // 近光灯 检测脚
 #define PIN_DETECT_HIGH_BEAM  (P06) // 大灯（远光灯） 检测脚
 #define PIN_DETECT_ENGINE_ERR (P05) // 发动机故障 检测脚
+#define PIN_DETECT_BAT        (P03) // 电池 检测脚
 
 // 定义信号有效时，检测脚对应的电平
 #define SIGNAL_VALID_LEV_OF_GEAR_N (0)
@@ -35,6 +36,8 @@
 #define SIGNAL_VALID_LEV_OF_HIGH_BEAM  (1)
 #define SIGNAL_VALID_LEV_OF_ENGINE_ERR (0)
 
+// 检测到低电平表示电池有效，高电平表示电池无效
+#define SIGNAL_VALID_LEV_OF_BAT (0)
 
 void pin_level_scan_config(void); // 扫描引脚的配置（初始化）
 void pin_level_scan(void);        // 扫描引脚的电平

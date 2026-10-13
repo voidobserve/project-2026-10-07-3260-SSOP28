@@ -9,8 +9,7 @@
 enum
 {
     ADC_CHANNEL_NONE = 0x00,
-    ADC_CHANNEL_FUEL,    // 检测油量
-    ADC_CHANNEL_BATTERY, // 电池电量检测
+    ADC_CHANNEL_FUEL, // 检测油量
 };
 typedef u8 adc_channel_t;
 
@@ -21,9 +20,6 @@ enum
 
     ADC_CHANNEL_STATUS_SEL_FUEL_BEGIN, // 检测油量的通道
     ADC_CHANNEL_STATUS_SEL_FUEL_END,
-
-    ADC_CHANNEL_STATUS_SEL_BATTERY_BEGIN, // 选择了检测电池的通道，等待adc稳定
-    ADC_CHANNEL_STATUS_SEL_BATTERY_END, // 选择了检测电池的通道，已经等待adc稳定
 };
 typedef u8 adc_channel_status_sel_t;
 

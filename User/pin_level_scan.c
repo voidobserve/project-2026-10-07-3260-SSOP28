@@ -43,6 +43,9 @@ void pin_level_scan_config(void)
 
     // 发动机故障 检测脚
     P0_MD1 &= ~GPIO_P05_MODE_SEL(0x03);
+
+    // 电池检测脚
+    P0_MD0 &= ~GPIO_P03_MODE_SEL(0x03);
 }
 
 // 引脚电平扫描
@@ -118,6 +121,12 @@ void pin_level_scan(void)
     // printf("instrument.high_beam_valid == %u\n",
     //        (u16)instrument.high_beam_valid);
 #endif
+
+    if (SIGNAL_VALID_LEV_OF_BAT == PIN_DETECT_BAT) {
+        instrument.bat_valid = 1;
+    } else {
+        instrument.bat_valid = 0;
+    }
 }
 
 #endif

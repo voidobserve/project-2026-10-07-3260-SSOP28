@@ -1,6 +1,5 @@
 #include "adc.h"
 #include "fuel_capacity.h"
-#include "battery.h"
 
 volatile u16 adc_val; // adc值，0~4095
 // 控制切换adc通道的状态机：
@@ -13,9 +12,6 @@ void adc_config(void)
     // 检测油量的引脚：
     P0_MD0 |= GPIO_P01_MODE_SEL(0x3); // 模拟模式
 #endif
-
-    // 检测电池电压的引脚
-    P0_MD1 |= GPIO_P04_MODE_SEL(0x3); // 模拟模式
 
     ADC_CFG1 |= (0x0F << 3) | // ADC时钟分频为16分频，为系统时钟/16
                 (0x01 << 0);  // adc0中断使能
@@ -53,15 +49,6 @@ void adc_channel_set(adc_channel_t adc_channel)
         ADC_CHS0 |= ADC_ANALOG_CHAN(0x01); // P01 通道
         break;
 #endif
-
-    case ADC_CHANNEL_BATTERY:
-
-        ADC_ACON1 |= (0x01 << 6) |         // 使能ADC内部参考信号
-                     (0x03 << 3) |         // 关闭测试信号
-                     (0x01 << 0);          // 内部参考电压选择 2.0 V
-        ADC_CHS0 |= ADC_ANALOG_CHAN(0x04); // P04 通道
-
-        break;
     }
 
     ADC_CFG0 |= ADC_CHAN0_EN(0x1) | // 使能通道0转换
@@ -79,7 +66,6 @@ void adc_channel_switch_by_isr(void)
             或者是adc一轮扫描结束
         */
     case ADC_CHANNEL_STATUS_NONE:  
-    case ADC_CHANNEL_STATUS_SEL_BATTERY_END:     
         adc_channel_set(ADC_CHANNEL_FUEL);
         adc_channel_status = ADC_CHANNEL_STATUS_SEL_FUEL_BEGIN;
         break;
@@ -88,12 +74,6 @@ void adc_channel_switch_by_isr(void)
         adc_channel_status = ADC_CHANNEL_STATUS_SEL_FUEL_END;
         break;
     case ADC_CHANNEL_STATUS_SEL_FUEL_END:
-        adc_channel_set(ADC_CHANNEL_BATTERY);
-        adc_channel_status = ADC_CHANNEL_STATUS_SEL_BATTERY_BEGIN;
-        break;
-    case ADC_CHANNEL_STATUS_SEL_BATTERY_BEGIN:
-        ADC_CFG0 |= ADC_CHAN0_TRG(0x1); // 触发ADC0转换
-        adc_channel_status = ADC_CHANNEL_STATUS_SEL_BATTERY_END;
         break;
     default:
         break;
@@ -117,11 +97,6 @@ void ADC_IRQHandler(void) interrupt ADC_IRQn
 #if FUEL_CAPACITY_SCAN_ENABLE
         case ADC_CHANNEL_STATUS_SEL_FUEL_END:
             fuel_capacity_adc_val_samples_update(adc_val);
-            break;
-#endif
-#if BATTERY_SCAN_ENABLE
-        case ADC_CHANNEL_STATUS_SEL_BATTERY_END:
-            bat_adc_val_samples_update(adc_val);
             break;
 #endif
         }

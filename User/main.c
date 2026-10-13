@@ -30,20 +30,18 @@
 #include "tmr1.h"
 #include "tmr2.h"
 #include "uart0.h"
- 
+
 #include "io_key.h"
 
 #include "pin_level_scan.h"
 
-#include "speed_scan.h"
-#include "battery.h"
+#include "speed_scan.h" 
 #include "instrument.h"
 #include "mileage.h"
 #include "engine_speed_scan.h"
 #include "fuel_capacity.h"
 
 volatile u8 irq_was_enabled = 0;
-
 
 #if USER_DEBUG_ENABLE
 
@@ -101,7 +99,7 @@ void user_init(void)
 
     aip3368h_module_init();
 
-#if (FUEL_CAPACITY_SCAN_ENABLE || BATTERY_SCAN_ENABLE)
+#if (FUEL_CAPACITY_SCAN_ENABLE)
     adc_config();
 #endif
 
@@ -154,8 +152,6 @@ void main(void)
         fuel_capacity_scan(); // 油量检测
 #endif
 
-        // bat_scan();
-
 #if ENGINE_SPEED_SCAN_ENABLE
         engine_speed_scan(); // 检测发动机转速
 #endif
@@ -177,7 +173,7 @@ void main(void)
 #endif
         }
  
-        instrument_info_save_handle(); 
+        instrument_info_save_handle();
 #endif
 
         aip3368h_module_display();

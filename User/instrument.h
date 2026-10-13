@@ -49,37 +49,19 @@ typedef struct
 
     u8 fuel_percent; // 油量(单位：百分比)
 
-    gear_t gear;     // 档位
-    u16 bat_voltage; // 电池电压（单位：mV）
-    u8 time_hour;    // 小时
-    u8 time_minute;  // 分钟
+    gear_t gear;    // 档位
+    u8 time_hour;   // 小时
+    u8 time_minute; // 分钟
 
     u8 left_turn_valid;  // 左转灯是否有效
     u8 right_turn_valid; // 右转灯是否有效
     u8 low_beam_valid;   // 近光灯是否有效
     u8 high_beam_valid;  // 远光灯是否有效
+    u8 bat_valid;        // 电池是否有效
 
     // u8 key_event; // 按键事件
 } instrument_t;
 extern volatile instrument_t instrument;
-
-enum
-{
-    REPORT_IDX_GEAR = 0,
-    REPORT_IDX_BAT_VOLTAGE,
-    REPORT_IDX_TIME,
-    REPORT_IDX_ENGINE_SPEED,
-    REPORT_IDX_SPEED,
-    REPORT_IDX_TOTAL_MILEAGE,
-    REPORT_IDX_SUBTOTAL_MILEAGE,
-    REPORT_IDX_LEFT_TURN,
-    REPORT_IDX_RIGHT_TURN,
-    REPORT_IDX_TEMP_OF_WATER_ERR,
-    REPORT_IDX_HIGH_BEAM,
-    REPORT_IDX_FUEL_PERCENT,
-
-    REPORT_IDX_MAX,
-};
 
 void instrument_info_init(void);
 void instrument_info_save(void);
