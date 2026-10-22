@@ -5,6 +5,8 @@
 #include "aip1302.h"
 #include "instrument.h"
 
+#include "ui_process.h"
+
 #include "user_config.h"
 
 // ui管理结构体
@@ -24,6 +26,7 @@ void ui_manager_init(void)
 void ui_timer_handle_isr(void)
 {
     aip3368h_refresh_time_add(); // 控制将显存数据刷新到屏幕驱动ic的周期
+    ui_process_speed_period_add();
 
     if (ui_manager.err_blink_time_cnt < ((u16)-1)) {
         ui_manager.err_blink_time_cnt++;
@@ -223,6 +226,7 @@ void ui_display_handle(void)
         aip3368h_display_gear_n_light(0);
     }
 
+    ui_process_speed();
     ui_display_err_handle(); // 显示错误提示（例如低油量提示）
     aip3368h_module_display();
 }
@@ -237,7 +241,7 @@ void ui_display_handle(void)
  */
 void ui_display_refresh(void)
 {
-    ENTER_CRITICAL_SECTION();
+    SYS_ENTER_CRITICAL_SECTION();
     ui_manager.blink_dir = 0;
     ui_manager.setting_blink_cnt = 0;
     ui_manager.auto_exit_setting_time_cnt = 0;
@@ -245,7 +249,7 @@ void ui_display_refresh(void)
     ui_manager.flag_is_setting_blink = 0;
     ui_manager.flag_is_err_blink = 0;
     ui_manager.flag_is_auto_exit = 0;
-    EXIT_CRITICAL_SECTION();
+    SYS_EXIT_CRITICAL_SECTION();
 
 #if 0
     switch (ui_manager.state) {

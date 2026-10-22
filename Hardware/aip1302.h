@@ -52,8 +52,8 @@ void aip1302_update_time_1ms_isr(void);
 void aip1302_config(void);
 u8 aip1302_read_byte(const u8 cmd);
 void aip1302_write_byte(const u8 cmd, u8 byte);
-// 向aip1302更新时间，时:分:秒
-void aip1302_update_time(aip1302_info_t aip1302_info);
+// 向aip1302更新时间，时:分:秒 
+void aip1302_update_time(aip1302_info_t *aip1302_info_ptr);
 #if 0
 void aip1302_update_date(aip1302_info_t aip1302_info);     // 向aip1302更新日期,年月日
 #endif

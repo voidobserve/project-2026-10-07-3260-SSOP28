@@ -506,6 +506,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\User\ui.c</FilePath>
             </File>
+            <File>
+              <FileName>ui_process.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\ui_process.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

@@ -77,12 +77,10 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
 
         aip1302_update_time_1ms_isr();
 
-        if (mileage_save_time_cnt < 65535) {
-            mileage_save_time_cnt++;
-        }
-
-        if (mileage_update_time_cnt < 65535) {
-            mileage_update_time_cnt++;
+        // 里程模块的 1ms 计时（生产者：这里只做累加，
+        // 主循环在临界区里一次性取走并清零，见 mileage_scan()）
+        if (mileage_time_1ms_cnt < 65535) {
+            mileage_time_1ms_cnt++;
         }
 
 #if FUEL_CAPACITY_SCAN_ENABLE

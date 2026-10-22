@@ -4,6 +4,8 @@
 
 #include "user_config.h"
 
+#if SPEED_SCAN_ENABLE
+
 // 速度检测是否一直没有脉冲到来，导致超时
 // 等待主循环处理的超时事件
 static volatile bit flag_is_speed_scan_over_time = 0;
@@ -16,6 +18,7 @@ static volatile u32 speed_pending_time_ms = 0; // 待处理窗口的累计时长
 static volatile u16 speed_scan_time_ms = 0;    // 当前窗口已计时长度，单位：ms
 static volatile u16 speed_no_pulse_time_ms = 0; // 距离上次脉冲的时间，单位：ms
 
+#if 0
 // 滑动平局数组
 #define SPEED_FILTER_ARRAY_SIZE (40)
 // #define SPEED_FILTER_ARRAY_SIZE (20)
@@ -70,6 +73,7 @@ u8 speed_filter_get_speed(void)
 
     return sum / (SPEED_FILTER_ARRAY_SIZE - 2);
 }
+#endif
 
 // 时速扫描的配置
 void speed_scan_config(void)
@@ -128,7 +132,7 @@ void speed_scan(void)
     u8 scan_due = 0;                  // 是否有完整窗口或待处理超时事件
     u8 is_speed_scan_over_time = 0;   // 本次快照是否包含超时事件
 
-    ENTER_CRITICAL_SECTION();
+    SYS_ENTER_CRITICAL_SECTION();
     if (speed_pending_time_ms != 0 || flag_is_speed_scan_over_time) {
         // 有未处理完的窗口，或者时扫描超时
         speed_pulse_snapshot = speed_pending_pulse_cnt;
@@ -140,7 +144,7 @@ void speed_scan(void)
         flag_is_speed_scan_over_time = 0;
         scan_due = 1;
     }
-    EXIT_CRITICAL_SECTION();
+    SYS_EXIT_CRITICAL_SECTION();
 
     if (0 == scan_due) {
         return;
@@ -183,14 +187,17 @@ void speed_scan(void)
     }
 
     // 防止时速为0时（有可能是推车，记录不到速度），记录不到里程
-    distance += tmp;
+    distance += tmp; // 累加走过的距离，单位：mm
 
     // printf("cur distace 2 %lu\n", distance);
     // printf("cur distace %lu\n", distance);
     // printf("cur speed == %lu \n", cur_speed);
 
     if (cur_speed > 0) {
-        // 显示时加入了一阶低通滤波，这里给得到的速度加上补偿
+        /*
+            显示时加入了一阶低通滤波，会导致显示出来的速度比这里计算的还要小，
+            这里给得到的速度加上补偿
+        */ 
         cur_speed = (u32)cur_speed * 105 / 100;
     }
 
@@ -201,3 +208,5 @@ void speed_scan(void)
 
     instrument.speed = cur_speed;
 }
+
+#endif

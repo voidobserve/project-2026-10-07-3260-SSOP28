@@ -2,6 +2,9 @@
 #define __SPEED_SCAN_H__
 
 #include "include.h" // 使用芯片官方提供的头文件
+#include "user_config.h"
+
+#if SPEED_SCAN_ENABLE
 
 #define SPEED_SCAN_PIN P01 // 检测时速的引脚
 
@@ -36,5 +39,6 @@ void speed_scan_timer_50us_isr(void);
 
 void speed_scan_config(void);
 void speed_scan(void);
+#endif
 
 #endif

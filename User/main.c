@@ -42,7 +42,17 @@
 #include "fuel_capacity.h"
 #include "ui.h"
 
-volatile u8 irq_was_enabled = 0;
+static volatile u8 irq_was_enabled = 0;
+void sys_enter_critical_section(void)
+{
+    irq_was_enabled = IE_EA;
+    IE_EA = 0;
+}
+
+void sys_exit_critical_section(void)
+{
+    IE_EA = irq_was_enabled;
+}
 
 #if USER_DEBUG_ENABLE
 
@@ -178,9 +188,9 @@ void main(void)
         }
 #endif
 
-        //  instrument_info_save_handle();
+        // 里程延时写入时间到点后，把里程写进 EEPROM
+        instrument_info_save_handle();
 
-        // aip3368h_module_display();
         ui_display_handle();
 
 // TEST ONLY

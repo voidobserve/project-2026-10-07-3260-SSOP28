@@ -13,30 +13,50 @@ void eeprom_24cxx_config(void)
 
 /**
  * @brief  向 24Cxx 写入一段数据，写完等待器件内部写周期结束
- *         注意：24Cxx 单次写入不能跨页(24CXX 页大小 xx 字节)，
- *               跨页时芯片会在页内回卷，需调用者自行保证不跨页
+ *         注意：24Cxx 单次写入不能跨页(页大小 EEPROM_PAGE_SIZE 字节)，
+ *               跨页时芯片的地址会在页内回卷，覆盖本页前面的数据，
+ *               所以这里直接拒绝跨页/超长写入，跨页数据请按页分多次调用
  * @param  reg_addr : 存储单元地址
  * @param  buf  : 待写入数据的缓冲区首地址
- * @param  len  : 要写入的字节数
+ * @param  len  : 要写入的字节数（1 ~ EEPROM_PAGE_SIZE）
+ * @retval 0--成功，非0--失败（1:入参非法 2:跨页 3:写失败 4:等待写周期超时）
  */
-void eeprom_24cxx_write(u8 reg_addr, u8 *buf, u16 len)
+u8 eeprom_24cxx_write(u8 reg_addr, const u8 *buf, u16 len)
 {
-    if (0 == iic_soft_write(EEPROM_DEV_ADDR, (u16)reg_addr, 1, buf, len)) {
-        // 写入成功，等待 24CXX 内部写周期结束
-        iic_soft_wait_ready(EEPROM_DEV_ADDR, EEPROM_WAIT_READY_TIMEOUT_MS);
+    // 入参校验
+    if ((buf == 0) || (len == 0)) {
+        return 1;
     }
+
+    // 24Cxx 的写操作不能跨页：跨页时芯片地址会在页内回卷，把本页前面的数据覆盖掉
+    if ((len > EEPROM_PAGE_SIZE) ||
+        (((u16)reg_addr % EEPROM_PAGE_SIZE) + len > EEPROM_PAGE_SIZE)) {
+        return 2;
+    }
+
+    if (0 != iic_soft_write(EEPROM_DEV_ADDR, (u16)reg_addr, 1, buf, len)) {
+        return 3; // 写失败
+    }
+
+    // 写入成功，等待 24CXX 内部写周期结束，否则紧接着的读会被 NACK
+    if (0 != iic_soft_wait_ready(EEPROM_DEV_ADDR, EEPROM_WAIT_READY_TIMEOUT_MS)) {
+        return 4;
+    }
+
+    return 0;
 }
 
 /**
  * @brief 从 24Cxx 读取一段数据
- * 
- * @param reg_addr 
- * @param buf 
- * @param len 
+ * @note  读操作允许跨页：24Cxx 顺序读时地址会自动递增，读到末尾回到开头
+ * @param reg_addr : 存储单元地址
+ * @param buf      : 读出数据的缓冲区首地址
+ * @param len      : 要读出的字节数
+ * @retval 0--成功，非0--失败
  */
-void eeprom_24cxx_read(u8 reg_addr, u8 *buf, u16 len)
+u8 eeprom_24cxx_read(u8 reg_addr, u8 *buf, u16 len)
 {
-    iic_soft_read(EEPROM_DEV_ADDR, (u16)reg_addr, 1, buf, len);
+    return iic_soft_read(EEPROM_DEV_ADDR, (u16)reg_addr, 1, buf, len);
 }
 
 #if EEPROM_24CXX_TEST_ENABLE

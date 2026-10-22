@@ -84,7 +84,7 @@ void engine_speed_scan(void)
     u8 scan_due = 0;             // 是否有完整窗口或待处理超时事件
     u8 is_scan_over_time = 0;    // 本次快照是否包含超时事件
 
-    ENTER_CRITICAL_SECTION();
+    SYS_ENTER_CRITICAL_SECTION();
     if (pending_engine_speed_scan_ms != 0 ||
         flag_is_engine_speed_scan_over_time) {
         scan_pulse_snapshot = pending_engine_speed_scan_cnt;
@@ -96,7 +96,7 @@ void engine_speed_scan(void)
         flag_is_engine_speed_scan_over_time = 0;
         scan_due = 1;
     }
-    EXIT_CRITICAL_SECTION();
+    SYS_EXIT_CRITICAL_SECTION();
 
     if (scan_due == 0) {
         return;

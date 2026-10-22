@@ -68,14 +68,14 @@ void aip1302_config(void)
     if (ret) {
 // 如果时钟芯片aip1302的晶振正在运行
 #if USER_DEBUG_ENABLE
-        printf("aip1302 is working\n");
-        printf("1302 is not first power on\n");
+        // printf("aip1302 is working\n");
+        // printf("1302 is not first power on\n");
 #endif
     } else {
 // 如果时钟芯片aip1302的晶振不在运行
 #if USER_DEBUG_ENABLE
-        printf("aip1302 is sleep\n");
-        printf("1302 is first power on\n");
+        // printf("aip1302 is sleep\n");
+        // printf("1302 is first power on\n");
 #endif
         // aip1302上电复位后，默认不跑时钟，这里要配置它开始跑时钟
 
@@ -141,7 +141,6 @@ void aip1302_update_time_1ms_isr(void)
         }
     }
 }
-
 
 // 将8位变量中的数据反转(例：0b 0111 0101  -> 0b 1010 1110)
 static u8 reverse_bits_u8(u8 arg)
@@ -469,15 +468,16 @@ void aip1302_update_all_data(aip1302_info_t aip1302_info)
 #endif
 
 // 向aip1302更新 年、月、日、时、分、秒
-void aip1302_update_time(aip1302_info_t aip1302_info)
+void aip1302_update_time(aip1302_info_t *aip1302_info_ptr)
 {
-    aip1302_write_byte(AIP1302_YEAR_REG_ADDR, (u16)aip1302_info.year - 2000);
-    aip1302_write_byte(AIP1302_MONTH_REG_ADDR, aip1302_info.month);
-    aip1302_write_byte(AIP1302_DATE_REG_ADDR, aip1302_info.day);
+    aip1302_write_byte(AIP1302_YEAR_REG_ADDR,
+                       (u16)aip1302_info_ptr->year - 2000);
+    aip1302_write_byte(AIP1302_MONTH_REG_ADDR, aip1302_info_ptr->month);
+    aip1302_write_byte(AIP1302_DATE_REG_ADDR, aip1302_info_ptr->day);
 
-    aip1302_write_byte(AIP1302_HOUR_REG_ADDR, aip1302_info.time_hour);
-    aip1302_write_byte(AIP1302_MIN_REG_ADDR, aip1302_info.time_min);
-    aip1302_write_byte(AIP1302_SEC_REG_ADDR, aip1302_info.time_sec);
+    aip1302_write_byte(AIP1302_HOUR_REG_ADDR, aip1302_info_ptr->time_hour);
+    aip1302_write_byte(AIP1302_MIN_REG_ADDR, aip1302_info_ptr->time_min);
+    aip1302_write_byte(AIP1302_SEC_REG_ADDR, aip1302_info_ptr->time_sec);
 }
 
 #if 0 
