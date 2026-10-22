@@ -44,8 +44,10 @@ typedef struct
 // 会导致采样过早、读出固定的交替值(如秒=85即0x55)。加大延时保证电平稳定后再采样。
 #define AIP1302_DELAY() delay(5)
 
-extern volatile aip1302_info_t aip1302_info;
-extern volatile u16 aip1302_update_time_interval;
+extern volatile aip1302_info_t aip1302_info; 
+extern volatile bit flag_is_update_aip1302_info;
+
+void aip1302_update_time_1ms_isr(void);
 
 void aip1302_config(void);
 u8 aip1302_read_byte(const u8 cmd);
@@ -57,7 +59,7 @@ void aip1302_update_date(aip1302_info_t aip1302_info);     // 向aip1302更新�
 #endif
 // void aip1302_update_weekday(aip1302_info_t aip1302_info);  // 向aip1302更新星期
 
-void aip1302_read_all(void); // 从aip1302中读出所有有关时间的数据
+void aip1302_read_all_info(void); // 从aip1302中读出所有有关时间的数据
 
 #if AIP1302_TEST_ENABLE
 void aip1302_test_1ms_isr(void);

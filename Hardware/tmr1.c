@@ -4,17 +4,18 @@
 
 #include "mileage.h"
 #include "io_key.h"
-#include "fuel_capacity.h" 
+#include "fuel_capacity.h"
 #include "adc.h"
 #include "instrument.h"
 
 #include "aip1302.h" // aip1302_update_time_interval
 #include "eeprom_24cxx.h"
-#include "aip3368_driver.h"
-#include "aip3368h_display.h"
+#include "ui.h"
 
 #if USER_DEBUG_ENABLE
-// #include "aip1302.h" // TEST ONLY 测试完成后，应该删除
+// #include "aip1302.h" // TEST ONLY
+// #include "aip3368_driver.h"
+// #include "aip3368h_display.h"
 #endif
 
 // 定时器定时周期 (单位:Hz)
@@ -64,7 +65,7 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
     if (TMR1_CONH & TMR_PRD_PND(0x1)) {
         TMR1_CONH |= TMR_PRD_PND(0x1); // 清除pending
 
-        aip3368h_refresh_time_add();
+        ui_timer_handle_isr();
 
         adc_channel_switch_by_isr(); // ADC通道切换
 
@@ -74,9 +75,7 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
         }
 #endif
 
-        if (aip1302_update_time_interval < ((u16)-1)) {
-            aip1302_update_time_interval++;
-        }
+        aip1302_update_time_1ms_isr();
 
         if (mileage_save_time_cnt < 65535) {
             mileage_save_time_cnt++;

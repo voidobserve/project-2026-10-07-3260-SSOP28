@@ -12,7 +12,9 @@
 
 #define IO_KEY_SCAN_CIRCLE_TIMES            (10)
 #define IO_KEY_FILTER_TIMES                 (3)    // 触摸按键消抖次数
-#define IO_KEY_LONG_PRESS_TIME_THRESHOLD_MS (5000) // 长按时间阈值（单位：ms）
+// #define IO_KEY_LONG_PRESS_TIME_THRESHOLD_MS (5000) // 长按时间阈值（单位：ms）
+// TEST ONLY
+#define IO_KEY_LONG_PRESS_TIME_THRESHOLD_MS (1000) // 长按时间阈值（单位：ms）
 #define IO_KEY_HOLD_PRESS_TIME_THRESHOLD_MS                                    \
     (150) // 长按持续(不松手)的时间阈值(单位：ms)，每隔 xx 时间认为有一次长按持续事件
 

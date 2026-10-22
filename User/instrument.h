@@ -5,8 +5,6 @@
 
 // 延时写入flash的时间：
 #define INSTRUMENT_INFO_SAVE_TIME ((u16)2000)
-// 发送一帧有关仪表数据的时间间隔
-#define INSTRUMENT_INFO_REPORT_PERIOD ((u8)50)
 
 // 挡位的定义
 enum
@@ -30,36 +28,48 @@ typedef u8 gear_t;
 // 定义存储在flash中的数据
 typedef struct
 {
-    // 总里程表（单位：m，使用英制单位时，只需要再发送时进行转换）
-    // （大计里程，范围：0 ~ xxx KM）
+    /*
+        总里程表（单位：m）
+        大计里程，范围：0 ~ 4,294,967.296 km，至少429万km
+    */
     u32 total_mileage;
-    // 短距离里程表(单位：m，使用英制单位时，只需要再发送时进行转换)
-    // （小计里程，范围：0 ~ xxx KM）
+    /*
+        短距离里程表(单位：m)
+        小计里程，范围：0 ~ 4,294,967.296 km，至少429万km
+    */
     u32 subtotal_mileage;
 
-    u8 is_save_data_valid;
+    // 大计里程反码(用于校验)
+    u32 total_mileage_inv;
+    // 短距离里程反码(用于校验)
+    u32 subtotal_mileage_inv;
 } save_info_t;
 
 typedef struct
 {
-    save_info_t save_info;
+    u32 total_mileage;
+    u32 subtotal_mileage;
+
     u32 engine_speed; // 发动机的转速（单位：rpm）
 
     u16 speed; // 时速(单位：km/h，使用英制单位时，需要进行转换)
 
     u8 fuel_percent; // 油量(单位：百分比)
 
-    gear_t gear;    // 档位
-    u8 time_hour;   // 小时
-    u8 time_minute; // 分钟
+    gear_t gear; // 档位
 
+    u8 gear_valid;       // 档位是否有效
     u8 left_turn_valid;  // 左转灯是否有效
     u8 right_turn_valid; // 右转灯是否有效
     u8 low_beam_valid;   // 近光灯是否有效
     u8 high_beam_valid;  // 远光灯是否有效
     u8 bat_valid;        // 电池是否有效
 
-    // u8 key_event; // 按键事件
+    // 是否显示总里程(0：不显示ODO，显示TRIP，1：显示ODO，不显示TRIP)
+    u8 is_display_total_mileage;
+
+    // 提供给ui的数据
+    u8 speed_to_display; // 显示屏显示的时速
 } instrument_t;
 extern volatile instrument_t instrument;
 

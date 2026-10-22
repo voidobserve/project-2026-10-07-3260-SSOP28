@@ -155,7 +155,7 @@ static const aip3368h_display_mapping_t engine_speed_lev_map[] = {
     挡位对应的指示灯（1 ~ 6挡）
     对应的显存：  
 */
-static const aip3368h_display_mapping_t gear_map[] = {
+const aip3368h_display_mapping_t gear_map[] = {
     // a 段 ~ g 段
     {4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 4}, {4, 5}, {4, 6},
 };
@@ -234,7 +234,9 @@ void aip3368h_display_clock_light(u8 is_display)
  * @brief 显示小时
  *      24小时制，小于10小时，不显示十位数，大于等于10小时，显示十位数
  * 
- * @param is_display
+ * @param is_display 
+ *      0：不显示 ，后续的参数无效
+ *      1：显示
  * 
  * @param hour 
  */
@@ -295,6 +297,9 @@ void aip3368h_display_time_hour(u8 is_display, u8 hour)
  * @brief 显示分钟
  * 
  * @param is_display 
+ *      0：不显示 ，后续的参数无效
+ *      1：显示
+ * 
  * @param minute 
  */
 void aip3368h_display_time_minute(u8 is_display, u8 minute)
@@ -635,7 +640,7 @@ void aip3368h_display_gear_n_light(u8 is_display)
  *      1： 1挡
  *      ...
  *      6： 6挡
- *      255: 没有挡位，不显示
+ *      255: 没有挡位，不处理，会有之前的显示残留
  */
 void aip3368h_display_gear(u8 gear)
 {

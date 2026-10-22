@@ -15,16 +15,28 @@ void eeprom_24cxx_config(void)
  * @brief  向 24Cxx 写入一段数据，写完等待器件内部写周期结束
  *         注意：24Cxx 单次写入不能跨页(24CXX 页大小 xx 字节)，
  *               跨页时芯片会在页内回卷，需调用者自行保证不跨页
- * @param  addr : 存储单元地址
+ * @param  reg_addr : 存储单元地址
  * @param  buf  : 待写入数据的缓冲区首地址
  * @param  len  : 要写入的字节数
  */
-void eeprom_24cxx_write(u8 addr, u8 *buf, u16 len)
+void eeprom_24cxx_write(u8 reg_addr, u8 *buf, u16 len)
 {
-    if (0 == iic_soft_write(EEPROM_DEV_ADDR, (u16)addr, 1, buf, len)) {
+    if (0 == iic_soft_write(EEPROM_DEV_ADDR, (u16)reg_addr, 1, buf, len)) {
         // 写入成功，等待 24CXX 内部写周期结束
         iic_soft_wait_ready(EEPROM_DEV_ADDR, EEPROM_WAIT_READY_TIMEOUT_MS);
     }
+}
+
+/**
+ * @brief 从 24Cxx 读取一段数据
+ * 
+ * @param reg_addr 
+ * @param buf 
+ * @param len 
+ */
+void eeprom_24cxx_read(u8 reg_addr, u8 *buf, u16 len)
+{
+    iic_soft_read(EEPROM_DEV_ADDR, (u16)reg_addr, 1, buf, len);
 }
 
 #if EEPROM_24CXX_TEST_ENABLE

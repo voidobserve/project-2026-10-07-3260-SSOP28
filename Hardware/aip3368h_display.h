@@ -34,6 +34,8 @@ enum
 };
 typedef u8 seg_idx_t;
 
+extern const aip3368h_display_mapping_t gear_map[7];
+
 void aip3368h_display_left_turn_light(u8 is_display);
 void aip3368h_display_right_turn_light(u8 is_display);
 void aip3368h_display_high_beam_light(u8 is_display);

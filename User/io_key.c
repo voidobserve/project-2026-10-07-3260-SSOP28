@@ -1,4 +1,7 @@
 #include "io_key.h"
+#include "ui.h"
+#include "instrument.h"
+#include "aip1302.h"
 
 #include "user_config.h"
 
@@ -91,11 +94,62 @@ void io_key_handle(void)
 #if USER_DEBUG_ENABLE
         printf("click\n");
 #endif
+
+        if (UI_STATE_NORMAL == ui_manager.state) {
+            // 正常显示模式下，按键单击切换显示的里程类型
+            instrument.is_display_total_mileage =
+                !instrument.is_display_total_mileage;
+            instrument_info_save_enable();
+        } else if (UI_STATE_SETTING_TIME_HOUR == ui_manager.state) {
+            // 在设置小时时，检测到短按
+            aip1302_info.time_hour++;
+            if (aip1302_info.time_hour > 23) {
+                aip1302_info.time_hour = 0;
+            }
+
+#if USER_DEBUG_ENABLE
+            printf("hour == %u\n", (u16)aip1302_info.time_hour);
+#endif
+        } else if (UI_STATE_SETTING_TIME_MINUTE == ui_manager.state) {
+            // 在设置分钟时，检测到短按 
+            aip1302_info.time_min++;
+            if (aip1302_info.time_min > 59) {
+                aip1302_info.time_min = 0;
+            }
+        }
+
+        ui_display_refresh();
+
         break;
     case IO_KEY_EVENT_LONG:
 #if USER_DEBUG_ENABLE
         printf("long\n");
 #endif
+
+        if (UI_STATE_NORMAL == ui_manager.state) {
+            // 如果正在显示总里程
+            if (1 == instrument.is_display_total_mileage) {
+                // 如果显示的是 TOTAL 里程，切换到设置时间-小时
+                ui_set_state(UI_STATE_SETTING_TIME_HOUR);
+            } else {
+                // 如果显示的是 TRIP 里程，清空它
+                instrument.subtotal_mileage = 0;
+                instrument_info_save_enable(); // 使能保存
+            }
+        } else if (UI_STATE_SETTING_TIME_HOUR == ui_manager.state) {
+            // 当前在设置时钟-小时，切换到设置时钟-分钟
+            ui_set_state(UI_STATE_SETTING_TIME_MINUTE);
+            // 切换后，将时间数据写回时钟芯片 
+            aip1302_update_time(aip1302_info);
+
+        } else if (UI_STATE_SETTING_TIME_MINUTE == ui_manager.state) {
+            // 当前在设置时钟-分钟，切换到正常显示
+            ui_set_state(UI_STATE_NORMAL);
+            // 切换后，将时间数据写回时钟芯片 
+            aip1302_update_time(aip1302_info);
+        }
+
+        ui_display_refresh();
         break;
 
     default:

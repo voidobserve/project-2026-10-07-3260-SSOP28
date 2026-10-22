@@ -10,6 +10,7 @@ volatile u32 distance;
 // 里程更新的时间计数,每隔一段时间更新一次当前里程（负责控制发送里程的周期）
 volatile u16 mileage_update_time_cnt;
 
+// TODO 
 // 总里程扫描
 void mileage_scan(void)
 {
@@ -41,13 +42,13 @@ void mileage_scan(void)
     {
         // 如果走过的距离超过了1m，再进行保存（保存到变量）
         // 99 9999 KM
-        if (instrument.save_info.total_mileage < (u32)(999999 * 1000)) {
-            instrument.save_info.total_mileage++; // +1m
+        if (instrument.total_mileage < (u32)(999999 * 1000)) {
+            instrument.total_mileage++; // +1m
         }
 
         // 99999.9 KM
-        if (instrument.save_info.subtotal_mileage < (u32)(999999 * 100)) {
-            instrument.save_info.subtotal_mileage++; // +1m
+        if (instrument.subtotal_mileage < (u32)(999999 * 100)) {
+            instrument.subtotal_mileage++; // +1m
         }
 
         distance -= 1000; // 剩下的、未保存的、不满1m的数据留到下一次再保存

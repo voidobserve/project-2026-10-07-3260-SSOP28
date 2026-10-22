@@ -1,7 +1,6 @@
 #include "adc.h"
 #include "fuel_capacity.h"
 
-volatile u16 adc_val; // adc值，0~4095
 // 控制切换adc通道的状态机：
 static volatile u8 adc_channel_status = ADC_CHANNEL_STATUS_NONE;
 
@@ -10,7 +9,7 @@ void adc_config(void)
 {
 #if FUEL_CAPACITY_SCAN_ENABLE
     // 检测油量的引脚：
-    P0_MD0 |= GPIO_P01_MODE_SEL(0x3); // 模拟模式
+    P2_MD0 |= GPIO_P20_MODE_SEL(0x03); // 模拟模式
 #endif
 
     ADC_CFG1 |= (0x0F << 3) | // ADC时钟分频为16分频，为系统时钟/16
@@ -26,6 +25,9 @@ void adc_config(void)
     ADC_CHS0 |= (0x01 << 6); // 使能 通道 0DLY 功能
     __EnableIRQ(ADC_IRQn);   // 使能ADC中断
     IE_EA = 1;               // 使能总中断
+
+    // 当前工程只有检测油量一个通道，直接固定配置该通道，不再切换
+    adc_channel_set(ADC_CHANNEL_FUEL);
 }
 
 // 设置adc通道
@@ -42,11 +44,10 @@ void adc_channel_set(adc_channel_t adc_channel)
 #if FUEL_CAPACITY_SCAN_ENABLE
         // 检测油量
     case ADC_CHANNEL_FUEL:
-
         ADC_ACON1 |= (0x01 << 6) |         // 使能ADC内部参考信号
                      (0x03 << 3) |         // 关闭测试信号
-                     (0x01 << 0);          // 内部参考电压选择 2.0 V
-        ADC_CHS0 |= ADC_ANALOG_CHAN(0x01); // P01 通道
+                     (0x03 << 0);          // 内部参考电压选择 3.0 V
+        ADC_CHS0 |= ADC_ANALOG_CHAN(0x10); // P20 通道
         break;
 #endif
     }
@@ -59,26 +60,17 @@ void adc_channel_set(adc_channel_t adc_channel)
 // 由定时器调用，adc通道切换
 void adc_channel_switch_by_isr(void)
 {
-#if 0
     switch (adc_channel_status) {
-        /*
-            刚上电（adc_channel_status == ADC_CHANNEL_STATUS_NONE），
-            或者是adc一轮扫描结束
-        */
-    case ADC_CHANNEL_STATUS_NONE:  
-        adc_channel_set(ADC_CHANNEL_FUEL);
-        adc_channel_status = ADC_CHANNEL_STATUS_SEL_FUEL_BEGIN;
-        break;
+        // none 或 fuel_begin，开启adc0转换
+    case ADC_CHANNEL_STATUS_NONE:
     case ADC_CHANNEL_STATUS_SEL_FUEL_BEGIN:
         ADC_CFG0 |= ADC_CHAN0_TRG(0x1); // 触发ADC0转换
         adc_channel_status = ADC_CHANNEL_STATUS_SEL_FUEL_END;
         break;
     case ADC_CHANNEL_STATUS_SEL_FUEL_END:
-        break;
-    default:
+        adc_channel_status = ADC_CHANNEL_STATUS_SEL_FUEL_BEGIN;
         break;
     }
-#endif
 }
 
 void ADC_IRQHandler(void) interrupt ADC_IRQn

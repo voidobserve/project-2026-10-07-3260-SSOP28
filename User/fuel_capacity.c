@@ -1,13 +1,10 @@
 #include "fuel_capacity.h"
 #include "instrument.h"
-
 #include "user_config.h"
-// #include "aip3368h_display.h"
 
 #if FUEL_CAPACITY_SCAN_ENABLE
 
 static volatile u8 fuel_capacity_scan_time_cnt = 0;
-static volatile u16 fuel_lev_update_time_cnt = 0;
 
 // 油量ad值的滑动平均：
 #define SAMPLE_COUNT 20 // 样本计数
@@ -61,6 +58,7 @@ void fuel_capacity_scan_time_add(void)
     }
 }
 
+// 油量检测脚对应电压值的滑动平均
 // 滑动平均：
 #define FUEL_VOLTAGE_SAMPLE_COUNT 20 // 样本计数
 static volatile u16 fuel_voltage_samples[FUEL_VOLTAGE_SAMPLE_COUNT] = {0};

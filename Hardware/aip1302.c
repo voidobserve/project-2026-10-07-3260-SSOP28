@@ -4,7 +4,11 @@
 #if IC_1302_ENABLE
 
 volatile aip1302_info_t aip1302_info = {0};
-volatile u16 aip1302_update_time_interval = 0;
+
+// 更新时间计数，控制更新时间
+volatile u16 aip1302_update_info_cnt = 0;
+// 更新时间到来标志位
+volatile bit flag_is_update_aip1302_info = 0;
 
 static u8 aip1302_is_working(void); // 函数声明
 
@@ -60,7 +64,7 @@ void aip1302_config(void)
     // 判断时钟芯片aip1302的晶振是否正在运行，
     // 如果在运行，不做任何处理
     // 如果不在运行，给时钟芯片配置一个默认时间 ,最后打开晶振
-    ret = aip1302_is_working(); // 函数内部调用了 aip1302_read_all()
+    ret = aip1302_is_working(); // 函数内部调用了 aip1302_read_all_info()
     if (ret) {
 // 如果时钟芯片aip1302的晶振正在运行
 #if USER_DEBUG_ENABLE
@@ -97,7 +101,7 @@ void aip1302_config(void)
 #endif
 
     // 从aip1302中读出所有有关时间的数据,存放到全局变量中
-    // aip1302_read_all();
+    // aip1302_read_all_info();
     // printf("power on, get aip1302 data: \n");
     // printf("year %u \n", aip1302_info.year);
     // printf("month %bu \n", aip1302_info.month);
@@ -126,6 +130,18 @@ void aip1302_config(void)
     // }
 #endif
 }
+
+void aip1302_update_time_1ms_isr(void)
+{
+    if (aip1302_update_info_cnt < (u16)-1) {
+        aip1302_update_info_cnt++;
+        if (aip1302_update_info_cnt >= AIP1302_UPDATE_TIME_INTERVAL) {
+            aip1302_update_info_cnt = 0;
+            flag_is_update_aip1302_info = 1;
+        }
+    }
+}
+
 
 // 将8位变量中的数据反转(例：0b 0111 0101  -> 0b 1010 1110)
 static u8 reverse_bits_u8(u8 arg)
@@ -328,7 +344,7 @@ static u8 aip1302_is_working(void)
 #else
 
     // 判断时间是否正确：
-    aip1302_read_all(); //
+    aip1302_read_all_info(); //
     if (aip1302_info.year > 2099 || aip1302_info.year < 2000 ||
         aip1302_info.month > 12 || aip1302_info.month < 1 ||
         aip1302_info.day > 31 || aip1302_info.day < 1 ||
@@ -481,7 +497,7 @@ void aip1302_update_date(aip1302_info_t aip1302_info)
 // }
 
 // 从aip1302中读出所有有关时间的数据,存放到全局变量中
-void aip1302_read_all(void)
+void aip1302_read_all_info(void)
 {
     aip1302_info.time_sec = aip1302_read_byte(AIP1302_SEC_REG_ADDR + 1);
     aip1302_info.time_min = aip1302_read_byte(AIP1302_MIN_REG_ADDR + 1);

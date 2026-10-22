@@ -501,6 +501,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\User\io_key.c</FilePath>
             </File>
+            <File>
+              <FileName>ui.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\ui.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

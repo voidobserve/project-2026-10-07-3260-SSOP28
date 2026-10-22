@@ -35,11 +35,12 @@
 
 #include "pin_level_scan.h"
 
-#include "speed_scan.h" 
+#include "speed_scan.h"
 #include "instrument.h"
 #include "mileage.h"
 #include "engine_speed_scan.h"
 #include "fuel_capacity.h"
+#include "ui.h"
 
 volatile u8 irq_was_enabled = 0;
 
@@ -103,10 +104,12 @@ void user_init(void)
     adc_config();
 #endif
 
-    // instrument_info_init(); // 初始化仪表信息
+    instrument_info_init(); // 初始化仪表信息
 
     tmr1_config(); //
-    // tmr2_config(); // 扫描脉冲(电平变化)的定时器
+    tmr2_config(); // 扫描脉冲(电平变化)的定时器
+
+    ui_manager_init();
 
     delay_ms(10); // 等待系统稳定（主要是等adc采集完成一轮数据）
 }
@@ -144,7 +147,7 @@ void main(void)
 #if SPEED_SCAN_ENABLE
         speed_scan(); // 检测时速
 #endif
-#if 0
+#if 1
         mileage_scan(); // 检测大计里程和小计里程
 #endif
 
@@ -156,27 +159,29 @@ void main(void)
         engine_speed_scan(); // 检测发动机转速
 #endif
 
-#if 0
-        if (aip1302_update_time_interval >= AIP1302_UPDATE_TIME_INTERVAL) {
-            aip1302_update_time_interval = 0;
-            aip1302_read_all(); // 读取时间
-            instrument.time_hour = aip1302_info.time_hour;
-            instrument.time_minute = aip1302_info.time_min;
+#if 1
+        if (flag_is_update_aip1302_info) {
+            flag_is_update_aip1302_info = 0;
 
+            if (UI_STATE_NORMAL == ui_manager.state) {
+                /*
+                    正常显示的时候，才读取时间，
+                    防止设置时间时，读取的时间覆盖当前设置的时间
+                */
+                aip1302_read_all_info(); // 读取时间
 #if USER_DEBUG_ENABLE
-            // printf("hour == %u\n", (u16)instrument.time_hour);
-            // printf("min == %u\n", (u16)instrument.time_minute);
-            // printf("aip1302: \n");
-            // printf("hour == %u\n", (u16)aip1302_info.time_hour);
-            // printf("min == %u\n", (u16)aip1302_info.time_min);
-            // printf("sec == %u\n", (u16)aip1302_info.time_sec);
+                // printf("hour == %u\n", (u16)aip1302_info.time_hour);
+                // printf("min == %u\n", (u16)aip1302_info.time_min);
+                // printf("sec == %u\n", (u16)aip1302_info.time_sec);
 #endif
+            }
         }
- 
-        instrument_info_save_handle();
 #endif
 
-        aip3368h_module_display();
+        //  instrument_info_save_handle();
+
+        // aip3368h_module_display();
+        ui_display_handle();
 
 // TEST ONLY
 #if AIP1302_TEST_ENABLE

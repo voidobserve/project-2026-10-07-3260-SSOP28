@@ -7,7 +7,7 @@
 #if FUEL_CAPACITY_SCAN_ENABLE
 
 // 选用油量检测对应的通道时，adc的参考电压，单位：mV
-#define ADC_REF_OF_FUEL ((u16)2000)
+#define ADC_REF_OF_FUEL ((u16)3000)
 
 // 将采集到的ad值转换成检测点对应的电压值，单位：mV
 #define FUEL_ADC_VAL_TO_VOLTAGE(adc_val)                                       \
@@ -19,7 +19,7 @@
 #define FUEL_EMPTY_VOLTAGE ((u16)1448)
 
 // 每次计算油量的时间周期，单位：ms
-#define FUEL_SCAN_PERIOD ((u16)200)
+#define FUEL_SCAN_PERIOD ((u8)200)
 
 void fuel_capacity_scan_time_add(void);
 void fuel_capacity_adc_val_samples_update(u16 adc_val);
