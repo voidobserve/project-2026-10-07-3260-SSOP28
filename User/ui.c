@@ -25,8 +25,12 @@ void ui_manager_init(void)
  */
 void ui_timer_handle_isr(void)
 {
+    static u8 cnt_10ms; // 10ms计数器
+
     aip3368h_refresh_time_add(); // 控制将显存数据刷新到屏幕驱动ic的周期
     ui_process_speed_period_add();
+    ui_process_engine_speed_period_add();
+    ui_process_fuel_lev_period_add();
 
     if (ui_manager.err_blink_time_cnt < ((u16)-1)) {
         ui_manager.err_blink_time_cnt++;
@@ -63,14 +67,11 @@ void ui_timer_handle_isr(void)
         ui_manager.flag_is_auto_exit = 0;
     }
 
-#if 0
-    // 递增 AIP3368H 显示 速度 刷新时间计数
-    aip3368h_display_speed_refresh_time_add();
-    // 递增 AIP3368H 显示 发动机转速 刷新时间计数
-    aip3368h_display_engine_speed_refresh_time_add();
-    ui_fuel_process_cnt_add();
-
-#endif
+    cnt_10ms++;
+    if (cnt_10ms >= 10) {
+        cnt_10ms = 0;
+        ui_process_engine_speed_frame_wave_10ms_isr();
+    }
 }
 
 // 设置ui状态（切换ui）
@@ -103,40 +104,26 @@ void ui_display_err_handle(void)
     }
 
     // 时间冒号闪烁（样机的时间分隔符与错误提示共用一个时基）
-    if (0 == display_err_dir) {
-        aip3368h_display_time_colon_light(0);
+    aip3368h_display_time_colon_light(display_err_dir);
+
+    // 低油量时，要跟其他错误显示错开，时间相位刚好相反
+    if (instrument.flag_fuel_low) {
+        // 让第 0 格油量的指示灯和油量图标指示灯一起闪烁
+
+        // 油量 图标
+        aip3368h_display_fuel_icon_light(!display_err_dir);
+        // 油量 第 0 格 指示灯
+        aip3368h_display_fuel_lev_0_red_light(!display_err_dir);
+
     } else {
-        aip3368h_display_time_colon_light(1);
+        // 油量正常，显示 油量 图标
+        aip3368h_display_fuel_icon_light(1);
     }
 
     if (0 == ui_manager.flag_is_err_blink) {
         return;
     }
     ui_manager.flag_is_err_blink = 0;
-
-#if 0
-// TODO 低油量时，要跟其他错误显示错开，时间相位刚好相反 
-    // 低油量 提示
-    if (instrument.flag_is_in_warning_of_low_fuel) {
-        // 直接操作显存，判断指示灯是否点亮，进而让它闪烁
-        // 让第 0 格油量的指示灯和油量图标指示灯一起闪烁
-
-        if (0 == display_err_dir) {
-            // 油量 图标
-            aip3368h_display_fuel_icon_light(0);
-            // 油量 第 0 格 指示灯
-            __aip3368h_display_fuel_lev__(0, 0);
-        } else {
-            // 油量 图标
-            aip3368h_display_fuel_icon_light(1);
-            // 油量 第 0 格 指示灯
-            __aip3368h_display_fuel_lev__(0, 1);
-        }
-    } else {
-        // 油量 图标
-        aip3368h_display_fuel_icon_light(1);
-    }
-#endif
 
     display_err_dir = !display_err_dir;
 }
@@ -189,8 +176,6 @@ void ui_display_handle(void)
     }
 
 #if 0
-   
-
     // 设置超时
     if (ui_manager.auto_exit_setting_time_cnt >= UI_SETTING_AUTO_EXIT_TIME) {
         ui_manager.auto_exit_setting_time_cnt = 0;
@@ -207,15 +192,11 @@ void ui_display_handle(void)
         // 自动退出设置界面后，保存相关数据
         instrument_info_save_enable();
     }
-
-    aip3368h_display_gear(instrument.gear); // 显示档位
+ 
     ui_instruct_light_process();
-    // TEST ONLY 测试时会屏蔽部分显示功能
-    ui_speed_process();                     // 显示时速
-    aip3368h_display_engine_speed_handle(); // 显示发动机转速
+    // TEST ONLY 测试时会屏蔽部分显示功能  
 
-    aip3368h_display_mileage_refresh();
-    ui_fuel_process();
+    aip3368h_display_mileage_refresh(); 
     ui_bat_process();
 #endif
 
@@ -226,7 +207,17 @@ void ui_display_handle(void)
         aip3368h_display_gear_n_light(0);
     }
 
+    // 各项指示灯
+    aip3368h_display_left_turn_light(instrument.left_turn_valid);
+    aip3368h_display_right_turn_light(instrument.right_turn_valid);
+    aip3368h_display_low_beam_light(instrument.low_beam_valid);
+    aip3368h_display_high_beam_light(instrument.high_beam_valid);
+    aip3368h_display_bat_err_light(!instrument.bat_valid);
+
     ui_process_speed();
+    ui_process_engine_speed_frame_wave(); // 发动机转速边框动画
+    ui_process_engine_speed();
+    ui_process_fuel_lev();   // 显示油量
     ui_display_err_handle(); // 显示错误提示（例如低油量提示）
     aip3368h_module_display();
 }

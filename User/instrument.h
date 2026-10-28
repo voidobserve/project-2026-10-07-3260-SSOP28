@@ -89,6 +89,8 @@ typedef struct
     // 是否显示总里程(0：不显示ODO，显示TRIP，1：显示ODO，不显示TRIP)
     u8 is_display_total_mileage;
 
+    u8 flag_fuel_low; // 油量低标志，0：正常，1：低油量提示(或者是没有接油量)
+
     // 提供给ui的数据
     u8 speed_to_display; // 显示屏显示的时速
 } instrument_t;

@@ -35,6 +35,7 @@ enum
 typedef u8 seg_idx_t;
 
 extern const aip3368h_display_mapping_t gear_map[7];
+extern const aip3368h_display_mapping_t engine_speed_frame_map[21];
 
 void aip3368h_display_left_turn_light(u8 is_display);
 void aip3368h_display_right_turn_light(u8 is_display);
@@ -58,9 +59,10 @@ void aip3368h_display_fuel_full_light(u8 is_display);
 void aip3368h_display_fuel_empty_light(u8 is_display);
 void aip3368h_display_fuel_icon_light(u8 is_display);
 void aip3368h_display_fuel_lev_0_red_light(u8 is_display);
-void aip3368h_display_fuel_lev(u8 is_display, u8 fuel_lev);
+void aip3368h_display_fuel_lev(u8 fuel_lev);
 
 void aip3368h_display_engine_speed_frame_by_idx(u8 is_display, u8 idx);
+void aip3368h_display_engine_speed_lev(u16 engine_speed_lev);
 
 void aip3368h_display_gear_n_light(u8 is_display);
 void aip3368h_display_gear(u8 gear);

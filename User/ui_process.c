@@ -15,7 +15,11 @@ static volatile u8 speed_filter_index = 0;
 // ui处理时速显示的周期
 static volatile u8 ui_process_speed_period = 0;
 // ui处理发动机转速边框动画的周期
-static volatile u16 ui_process_engine_speed_frame_wave_period = 0;
+static volatile u8 ui_process_engine_speed_frame_wave_period = 0;
+// ui处理发动机转速的周期计数器
+static volatile u8 ui_process_engine_speed_period = 0;
+// ui处理 油量 显示的周期
+static volatile u16 ui_process_fuel_lev_period = 0;
 
 static void speed_filter_init(u8 speed)
 {
@@ -164,7 +168,7 @@ void ui_process_speed(void)
     }
 }
 
-void ui_process_engine_speed_frame_wave_1ms_isr(void)
+void ui_process_engine_speed_frame_wave_10ms_isr(void)
 {
     if (ui_process_engine_speed_frame_wave_period < UINT8_T_MAX) {
         ui_process_engine_speed_frame_wave_period++;
@@ -181,17 +185,19 @@ void ui_process_engine_speed_frame_wave_1ms_isr(void)
  *  4. 回到中间时，四个移动的灯会重合成中间三个灯，循环。
  */
 void ui_process_engine_speed_frame_wave(void)
-{ 
+{
     static s8 dir = 0;        // 0：向两侧扩散，1：向中间回收
     static s8 spread = -1;    // -1：中间三个灯，0..8：向两侧扩散/回收
     const s8 center_idx = 10; // 中间位置
     const s8 max_spread = 8;  // 扩散到边界位置
     u8 i;
 
-	if (ui_process_engine_speed_frame_wave_period >= 500) {
-		ui_process_engine_speed_frame_wave_period = 0;
-	}
-  
+    if (ui_process_engine_speed_frame_wave_period >= (500 / 10)) {
+        ui_process_engine_speed_frame_wave_period = 0;
+    } else {
+        // 动画播放间隔未到，直接返回
+        return;
+    }
 
     // 清空当前所有发动机转速边框灯
     for (i = 0; i < ARRAY_SIZE(engine_speed_frame_map); i++) {
@@ -249,5 +255,168 @@ void ui_process_engine_speed_frame_wave(void)
                 spread--;
             }
         }
+    }
+}
+
+void ui_process_engine_speed_period_add(void)
+{
+    if (ui_process_engine_speed_period < UINT8_T_MAX) {
+        ui_process_engine_speed_period++;
+    }
+}
+
+/**
+ * @brief 获取发动机转速挡位
+ * 
+ * @return u8 
+ */
+static u8 ui_process_engine_speed_get_lev(void)
+{
+    // 仪表上的一格对应500rpm，这里除以500，得到档位
+    return (u8)(instrument.engine_speed / 500);
+}
+
+/**
+ * @brief 显示发动机转速
+ * 
+ */
+void ui_process_engine_speed(void)
+{
+    // 延迟显示的发动机转速
+    static u8 engine_speed_level_of_lag = 0;
+    // static u8 is_initialized = 0;
+    u8 cur_engine_speed_level = 0;
+    u8 level_diff;             // 显示的和实际计算得到的挡位插值
+    u8 refresh_time_threshold; // 刷新间隔阈值
+
+    // if (is_initialized == 0) {
+    //     is_initialized = 1;
+    //     engine_speed_level_of_lag = ui_process_engine_speed_get_lev();
+    // }
+
+    // 如果当前发动机转速与显示的发动机转速很接近，延长刷新时间（样机大约是2s）
+    cur_engine_speed_level = ui_process_engine_speed_get_lev();
+    if (cur_engine_speed_level == 0) {
+        // 转速为0时，快速更新
+        refresh_time_threshold = UI_RPOCESS_ENGINE_SPEED_PERIOD;
+    } else {
+        level_diff = (cur_engine_speed_level > engine_speed_level_of_lag)
+                         ? (cur_engine_speed_level - engine_speed_level_of_lag)
+                         : (engine_speed_level_of_lag - cur_engine_speed_level);
+
+        // 转速挡位差值较大，快速更新；转速挡位差值较小，延长刷新时间
+        refresh_time_threshold = (level_diff <= 1)
+                                     ? (UI_RPOCESS_ENGINE_SPEED_PERIOD * 2)
+                                     : UI_RPOCESS_ENGINE_SPEED_PERIOD;
+    }
+
+    if (ui_process_engine_speed_period >= refresh_time_threshold) {
+        ui_process_engine_speed_period = 0;
+        if (engine_speed_level_of_lag < cur_engine_speed_level) {
+            engine_speed_level_of_lag++;
+        } else if (engine_speed_level_of_lag > cur_engine_speed_level) {
+            if (engine_speed_level_of_lag > 0) {
+                engine_speed_level_of_lag--;
+            }
+        }
+
+        aip3368h_display_engine_speed_lev(engine_speed_level_of_lag);
+    }
+}
+
+void ui_process_fuel_lev_period_add(void)
+{
+    if (ui_process_fuel_lev_period < UINT16_T_MAX) {
+        ui_process_fuel_lev_period++;
+    }
+}
+
+static u8 fuel_percent_to_lev(u8 fuel_percent)
+{
+    u8 ret = 0;
+    if (fuel_percent <= FUEL_LEV_0 || (fuel_percent == 0xFF)) {
+        ret = 0;
+    } else if (fuel_percent <= FUEL_LEV_1) {
+        ret = 1;
+    } else if (fuel_percent <= FUEL_LEV_2) {
+        ret = 2;
+    } else if (fuel_percent <= FUEL_LEV_3) {
+        ret = 3;
+    } else if (fuel_percent <= FUEL_LEV_4) {
+        ret = 4;
+    } else {
+        ret = 5;
+    }
+
+    return ret;
+}
+
+void ui_process_fuel_lev(void)
+{
+    static u8 is_initialized = 0;               // 是否已经初始化
+    static volatile u8 fuel_lev_to_display = 0; // 最终要显示的油量等级
+    volatile u8 cur_fuel_lev = 0;               // 当前油量等级
+    volatile u8 fuel_lev_diff = 0; // 当前的油量等级与显示的油量等级之间的差值
+    volatile u16 process_period;
+
+    SYS_ENTER_CRITICAL_SECTION();
+    process_period = ui_process_fuel_lev_period;
+    SYS_EXIT_CRITICAL_SECTION();
+
+    if (0 == is_initialized) {
+        is_initialized = 1;
+        cur_fuel_lev = fuel_percent_to_lev(instrument.fuel_percent);
+        fuel_lev_to_display = cur_fuel_lev;
+
+        if (0 == fuel_lev_to_display) {
+            instrument.flag_fuel_low = 1;
+        } else {
+            instrument.flag_fuel_low = 0;
+        }
+
+        aip3368h_display_fuel_lev(fuel_lev_to_display);
+    }
+
+    cur_fuel_lev = fuel_percent_to_lev(instrument.fuel_percent);
+    if (cur_fuel_lev != fuel_lev_to_display) {
+        if (cur_fuel_lev > fuel_lev_to_display) {
+            fuel_lev_diff = cur_fuel_lev - fuel_lev_to_display;
+        } else {
+            fuel_lev_diff = fuel_lev_to_display - cur_fuel_lev;
+        }
+    }
+
+    if (fuel_lev_diff == 0) {
+        // 油量等级没有变化，清空计数值，再返回
+        process_period = 0;
+        return;
+    } else if ((fuel_lev_diff >= 2 &&
+                process_period < UI_RPOCESS_FUEL_LEVEL_PERIOD) ||
+               (fuel_lev_diff == 1 &&
+                process_period < UI_RPOCESS_FUEL_LEVEL_WHEN_CLOSE_PERIOD)) {
+        // 没有到油量挡位更新时间，直接返回
+        return;
+    }
+
+    process_period = 0;
+
+    if (fuel_lev_to_display < cur_fuel_lev) {
+        fuel_lev_to_display++;
+    } else if (fuel_lev_to_display > cur_fuel_lev) {
+        fuel_lev_to_display--;
+    }
+
+    if (fuel_lev_to_display == 0) {
+        // 打开低油量报警
+        if (instrument.flag_fuel_low == 0) {
+            // 如果之前没有进入低油量报警
+            aip3368h_display_fuel_lev(0); // 清空油量显示
+            instrument.flag_fuel_low = 1;
+        }
+    } else {
+        // 关闭低油量报警
+        instrument.flag_fuel_low = 0;
+        // 正常显示油量
+        aip3368h_display_fuel_lev(fuel_lev_to_display);
     }
 }

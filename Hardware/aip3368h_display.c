@@ -133,7 +133,7 @@ static const aip3368h_display_mapping_t fuel_lev_map[] = {
     发动机转速边框对应的指示灯
     对应的显存：  
 */
-static const aip3368h_display_mapping_t engine_speed_frame_map[] = {
+const aip3368h_display_mapping_t engine_speed_frame_map[] = {
     {3, 0},  {3, 1},  {3, 2}, {3, 3},  {3, 4},  {3, 5},  {3, 6},
     {3, 7},  {3, 8},  {3, 9}, {3, 10}, {3, 11}, {3, 12}, {3, 13},
     {3, 14}, {3, 15}, {0, 8}, {0, 9},  {0, 10}, {0, 11}, {0, 12},
@@ -563,12 +563,12 @@ void aip3368h_display_fuel_lev_0_red_light(u8 is_display)
  *      2： 显示 2 格   
  *      ...
  */
-void aip3368h_display_fuel_lev(u8 is_display, u8 fuel_lev)
+void aip3368h_display_fuel_lev(u8 fuel_lev)
 {
     u8 i;
 
     for (i = 0; i < ARRAY_SIZE(fuel_lev_map); i++) {
-        if (is_display && (i < fuel_lev)) {
+        if (i < fuel_lev) {
             AIP3368H_DISPLAY_BUF_SET(fuel_lev_map[i].buff_index,
                                      fuel_lev_map[i].bit_offset);
         } else {
@@ -595,10 +595,7 @@ void aip3368h_display_engine_speed_frame_by_idx(u8 is_display, u8 idx)
 
 /**
  * @brief 显示发动机转速
- * 
- * @param is_display 
- *          1：显示
- *          0：不显示，参数列表后续的参数无效
+ *  
  * @param engine_speed_lev 发动机转速等级  
  *          0：不显示
  *          1：显示 1 格
@@ -606,12 +603,12 @@ void aip3368h_display_engine_speed_frame_by_idx(u8 is_display, u8 idx)
  *          ...
  * 
  */
-void aip3368h_display_engine_speed_lev(u8 is_display, u16 engine_speed_lev)
+void aip3368h_display_engine_speed_lev(u16 engine_speed_lev)
 {
     u8 i;
 
     for (i = 0; i < ARRAY_SIZE(engine_speed_lev_map); i++) {
-        if (is_display && (i < engine_speed_lev)) {
+        if (i < engine_speed_lev) {
             AIP3368H_DISPLAY_BUF_SET(engine_speed_lev_map[i].buff_index,
                                      engine_speed_lev_map[i].bit_offset);
         } else {
@@ -914,7 +911,7 @@ void test_aip3368h_display_engine_speed_lev_1ms_isr(void)
         cnt = 0;
     }
 
-    aip3368h_display_engine_speed_lev(1, lev);
+    aip3368h_display_engine_speed_lev( lev);
     lev++;
     if (lev >= ARRAY_SIZE(engine_speed_lev_map) + 1) {
         lev = 0;
@@ -1040,7 +1037,7 @@ void test_aip3368h_display_fuel_lev_1ms_isr(void)
     cnt++;
     if (cnt >= 500) {
         cnt = 0;
-        aip3368h_display_fuel_lev(1, fuel_lev);
+        aip3368h_display_fuel_lev(fuel_lev);
         fuel_lev++;
         if (fuel_lev >= ARRAY_SIZE(fuel_lev_map) + 1) {
             fuel_lev = 0;
