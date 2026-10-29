@@ -127,6 +127,12 @@ void pin_level_scan(void)
     } else {
         instrument.bat_valid = 0;
     }
+ 
+    if (SIGNAL_VALID_LEV_OF_ENGINE_ERR == PIN_DETECT_ENGINE_ERR) {
+        instrument.engine_err_valid = 1;
+    } else {
+        instrument.engine_err_valid = 0;
+    }
 }
 
 #endif

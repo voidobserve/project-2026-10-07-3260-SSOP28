@@ -49,7 +49,11 @@ void ui_process_engine_speed(void);
 void ui_process_fuel_lev_period_add(void);
 void ui_process_fuel_lev(void);
 
+void ui_process_mileage(void);
 
+
+void ui_process_boot_anim_timer_isr(void);
+void ui_process_boot_anim(void);
 
 #endif
 

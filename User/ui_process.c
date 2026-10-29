@@ -1,6 +1,10 @@
 #include "ui_process.h"
 #include "typedef.h"
+#include "tx8T326x.h"        // WDT_KEY
+#include "tx8T326x_system.h" // WDT_KEY_VAL()
+#include <string.h>          // memset
 
+#include "aip3368_driver.h"
 #include "aip3368h_display.h"
 #include "instrument.h"
 
@@ -418,5 +422,75 @@ void ui_process_fuel_lev(void)
         instrument.flag_fuel_low = 0;
         // 正常显示油量
         aip3368h_display_fuel_lev(fuel_lev_to_display);
+    }
+}
+
+/**
+ * @brief 显示里程，包括里程的单位
+ * 
+ * @note 样机显示里程，
+ *      总里程和当前里程都是以x100m为单位进行显示，默认点亮小数点
+ *      样机默认使用公制单位，没有切换英制单位的功能
+ * 
+ */
+void ui_process_mileage(void)
+{
+    // u32 dislay_mileage;
+    if (instrument.is_display_total_mileage) {
+        // 显示总里程
+        // dislay_mileage = instrument.total_mileage / 100;
+        aip3368h_display_mileage(instrument.total_mileage / 100);
+    } else {
+        // 显示当前里程
+        // dislay_mileage = instrument.subtotal_mileage / 100;
+        aip3368h_display_mileage(instrument.subtotal_mileage / 100);
+    }
+
+    aip3368h_display_trip_light(!instrument.is_display_total_mileage);
+    aip3368h_display_odo_light(instrument.is_display_total_mileage);
+
+    // aip3368h_display_mileage(dislay_mileage);
+    aip3368h_display_mile_light(0);
+    aip3368h_display_km_light(1);
+}
+
+static u8 is_boot_anim_finished = 0; // 是否已经完成上电动画
+static u16 ui_process_boot_anim_cnt; // 直接用定时器1调用
+
+// 上电动画使用到的定时器中断
+void ui_process_boot_anim_timer_isr(void)
+{
+    if (is_boot_anim_finished) {
+        return;
+    }
+
+    if (ui_process_boot_anim_cnt < UINT16_T_MAX) {
+        ui_process_boot_anim_cnt++;
+    }
+}
+
+/**
+ * @brief 上电点亮所有指示灯
+ * 
+ * @return * void 
+ */
+void ui_process_boot_anim(void)
+{
+    // 点亮所有指示灯
+    memset(aip3368h_display_buff, 0xFF, sizeof(aip3368h_display_buff));
+
+    while (1) {
+        WDT_KEY = WDT_KEY_VAL(0xAA); // 喂狗并清除 wdt_pending
+
+        if (ui_process_boot_anim_cnt >= 2000) {
+            is_boot_anim_finished = 1;
+            // ui_process_boot_anim_cnt = 0; // 可以不用清零，后续不再使用
+
+            // 有些使用不到的指示灯，需要熄灭
+            aip3368h_display_abs_light(0); 
+            break;
+        }
+
+        aip3368h_module_display();
     }
 }

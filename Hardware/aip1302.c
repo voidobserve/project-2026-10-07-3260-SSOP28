@@ -69,13 +69,13 @@ void aip1302_config(void)
 // 如果时钟芯片aip1302的晶振正在运行
 #if USER_DEBUG_ENABLE
         // printf("aip1302 is working\n");
-        // printf("1302 is not first power on\n");
+        printf("1302 is not first power on\n");
 #endif
     } else {
 // 如果时钟芯片aip1302的晶振不在运行
 #if USER_DEBUG_ENABLE
         // printf("aip1302 is sleep\n");
-        // printf("1302 is first power on\n");
+        printf("1302 is first power on\n");
 #endif
         // aip1302上电复位后，默认不跑时钟，这里要配置它开始跑时钟
 
@@ -100,15 +100,15 @@ void aip1302_config(void)
     }
 #endif
 
-    // 从aip1302中读出所有有关时间的数据,存放到全局变量中
-    // aip1302_read_all_info();
-    // printf("power on, get aip1302 data: \n");
-    // printf("year %u \n", aip1302_info.year);
-    // printf("month %bu \n", aip1302_info.month);
-    // printf("day %bu \n", aip1302_info.day);
-    // printf("hour %bu \n", aip1302_info.time_hour);
-    // printf("min %bu \n", aip1302_info.time_min);
-    // printf("sec %bu \n", aip1302_info.time_sec);
+#if USER_DEBUG_ENABLE
+    // 读取时钟芯片中的数据后，打印
+    printf("year %u \n", (u16)aip1302_info.year);
+    printf("month %u \n", (u16)aip1302_info.month);
+    printf("day %u \n", (u16)aip1302_info.day);
+    printf("hour %u \n", (u16)aip1302_info.time_hour);
+    printf("min %u \n", (u16)aip1302_info.time_min);
+    printf("sec %u \n", (u16)aip1302_info.time_sec);
+#endif
 
 #if 0
     /* 测试程序 */

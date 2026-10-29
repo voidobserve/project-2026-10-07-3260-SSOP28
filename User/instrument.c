@@ -233,7 +233,7 @@ void instrument_info_init(void)
     // 空片（第一次上电）：里程清零，并立刻写一条 (0,0)，让下次上电有基准数据
     instrument.total_mileage = 0;
     instrument.subtotal_mileage = 0;
-    instrument.is_display_total_mileage = 0;
+    instrument.is_display_total_mileage = 1; // 默认显示总里程
     instrument_info_next_slot = 0;
     instrument_info_save();
 }

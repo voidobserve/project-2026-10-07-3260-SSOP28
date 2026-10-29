@@ -10,6 +10,7 @@
 
 #include "aip1302.h" // aip1302_update_time_interval
 #include "eeprom_24cxx.h"
+#include "ui_process.h"
 #include "ui.h"
 
 #if USER_DEBUG_ENABLE
@@ -88,6 +89,8 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
 #endif
 
         instrument_info_save_time_add();
+
+        ui_process_boot_anim_timer_isr();
 
 #if AIP3368H_DISPLAY_TEST_ENABLE
         test_aip3368h_display_light_1ms_isr();

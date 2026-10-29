@@ -60,6 +60,7 @@ void ui_timer_handle_isr(void)
             }
         }
     } else {
+        // 不在设置界面
         ui_manager.setting_blink_cnt = 0;
         ui_manager.auto_exit_setting_time_cnt = 0;
 
@@ -175,24 +176,18 @@ void ui_display_handle(void)
         break;
     }
 
-#if 0
-    // 设置超时
-    if (ui_manager.auto_exit_setting_time_cnt >= UI_SETTING_AUTO_EXIT_TIME) {
-        ui_manager.auto_exit_setting_time_cnt = 0;
-
-        if (UI_STATE_SETTING_TIME_MINUTE == ui_manager.state ||
-            UI_STATE_SETTING_TIME_HOUR == ui_manager.state) {
-            // 如果是设置时间，超时后，将时间写回
-            // TODO
-        }
-
+    // 设置界面->超时，回到正常页面
+    if (ui_manager.flag_is_auto_exit) {
+        ui_manager.flag_is_auto_exit = 0;
         ui_set_state(UI_STATE_NORMAL);
         ui_display_refresh();
-
+        // 将时间数据写回时钟芯片
+        aip1302_update_time(&aip1302_info);
         // 自动退出设置界面后，保存相关数据
         instrument_info_save_enable();
     }
- 
+
+#if 0 
     ui_instruct_light_process();
     // TEST ONLY 测试时会屏蔽部分显示功能  
 
@@ -200,12 +195,27 @@ void ui_display_handle(void)
     ui_bat_process();
 #endif
 
-    // 挡位有效时，显示挡位。否则进入显示错误提示处理函数
-    if (instrument.gear != GEAR_UNKNOWN) {
-        aip3368h_display_gear(instrument.gear);
-    } else {
-        aip3368h_display_gear_n_light(0);
-    }
+    // if (instrument.last_gear != instrument.gear) {
+    //     // 有挡位变化时，先清空所有挡位显示
+    //     u8 i;
+    //     instrument.last_gear = instrument.gear;
+    //     aip3368h_display_gear_n_light(0);
+    //     // 遍历 a ~ g 段，清空挡位的数码管显示
+    //     for (i = 0; i < 7; i++) {
+    //         AIP3368H_DISPLAY_BUF_CLR(gear_map[i].buff_index,
+    //                                  gear_map[i].bit_offset);
+    //     }
+    // }
+
+    // // 挡位有效时，显示挡位。否则进入显示错误提示处理函数
+    // if (instrument.gear != GEAR_UNKNOWN) {
+    //     aip3368h_display_gear(instrument.gear);
+    //     } else {
+    //         aip3368h_display_gear_n_light(0);
+    // }
+
+    // 显示挡位，如果挡位无效，函数内会清空显示，由 ui_display_err_handle() 进一步处理
+    aip3368h_display_gear(instrument.gear);
 
     // 各项指示灯
     aip3368h_display_left_turn_light(instrument.left_turn_valid);
@@ -213,12 +223,14 @@ void ui_display_handle(void)
     aip3368h_display_low_beam_light(instrument.low_beam_valid);
     aip3368h_display_high_beam_light(instrument.high_beam_valid);
     aip3368h_display_bat_err_light(!instrument.bat_valid);
+    aip3368h_display_engine_err_light(instrument.engine_err_valid);
 
     ui_process_speed();
     ui_process_engine_speed_frame_wave(); // 发动机转速边框动画
-    ui_process_engine_speed();
-    ui_process_fuel_lev();   // 显示油量
-    ui_display_err_handle(); // 显示错误提示（例如低油量提示）
+    ui_process_engine_speed();            // 显示发动机转速
+    ui_process_fuel_lev();                // 显示油量
+    ui_process_mileage();                 // 显示里程
+    ui_display_err_handle();              // 显示错误提示（例如低油量提示）
     aip3368h_module_display();
 }
 
@@ -242,25 +254,15 @@ void ui_display_refresh(void)
     ui_manager.flag_is_auto_exit = 0;
     SYS_EXIT_CRITICAL_SECTION();
 
-#if 0
-    switch (ui_manager.state) {
-    case UI_STATE_NORMAL:
-        // 正常显示时
-
-        // 显示时速
-        aip3368h_display_speed_by_unit_type(instrument.speed_to_display);
-
-        break;
-    }
-
-    // 公制单位
+    /*
+        根据当前选择的时速单位，点亮对应的时速单位指示灯
+        目前样机默认只有公制单位，没有英制单位
+    */
     aip3368h_display_mph_light(0);
     aip3368h_display_kmh_light(1);
-    // 立即更新里程显示：
-    aip3368h_display_mileage_refresh();
-    aip3368h_display_mileage_unit_lights(instrument.distance_unit_type);
+    //
+    // aip
 
-#endif
     // 立即更新时间显示：
     aip3368h_display_time_hour(1, aip1302_info.time_hour);
     aip3368h_display_time_minute(1, aip1302_info.time_min);

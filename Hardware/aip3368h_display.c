@@ -637,7 +637,7 @@ void aip3368h_display_gear_n_light(u8 is_display)
  *      1： 1挡
  *      ...
  *      6： 6挡
- *      255: 没有挡位，不处理，会有之前的显示残留
+ *      255: 没有挡位，会清空所有挡位的显示
  */
 void aip3368h_display_gear(u8 gear)
 {

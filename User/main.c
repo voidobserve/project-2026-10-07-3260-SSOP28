@@ -40,6 +40,7 @@
 #include "mileage.h"
 #include "engine_speed_scan.h"
 #include "fuel_capacity.h"
+#include "ui_process.h"
 #include "ui.h"
 
 static volatile u8 irq_was_enabled = 0;
@@ -137,6 +138,8 @@ void main(void)
 
     /* 用户代码初始化接口 */
     user_init();
+
+    ui_process_boot_anim();
 
     /* 系统主循环 */
     while (1) {

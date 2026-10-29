@@ -63,8 +63,8 @@ enum
 #define INSTRUMENT_EEPROM_FLAG_DISPLAY_TOTAL ((u8)0x01) // bit0：1--显示总里程
 
 // 里程的合理上限，超出则认为记录无效（空片读出来是全 0xFF）
-#define INSTRUMENT_TOTAL_MILEAGE_MAX ((u32)999999 * 1000) // 999 999 km
-#define INSTRUMENT_SUBTOTAL_MILEAGE_MAX ((u32)999999 * 100) // 99 999.9 km
+#define INSTRUMENT_TOTAL_MILEAGE_MAX    ((u32)999999 * 1000) // 999 999 km
+#define INSTRUMENT_SUBTOTAL_MILEAGE_MAX ((u32)999999 * 100)  // 99 999.9 km
 
 typedef struct
 {
@@ -77,6 +77,7 @@ typedef struct
 
     u8 fuel_percent; // 油量(单位：百分比)
 
+    // gear_t last_gear; // 上一次的档位
     gear_t gear; // 档位
 
     u8 gear_valid;       // 档位是否有效
@@ -84,7 +85,9 @@ typedef struct
     u8 right_turn_valid; // 右转灯是否有效
     u8 low_beam_valid;   // 近光灯是否有效
     u8 high_beam_valid;  // 远光灯是否有效
-    u8 bat_valid;        // 电池是否有效
+    // 电池信号是否有效，0：没有接电池(没有电池信号)，1：有电池信号
+    u8 bat_valid;
+    u8 engine_err_valid; // 发动机故障信号是否有效
 
     // 是否显示总里程(0：不显示ODO，显示TRIP，1：显示ODO，不显示TRIP)
     u8 is_display_total_mileage;
