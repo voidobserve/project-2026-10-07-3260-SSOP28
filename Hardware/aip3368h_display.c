@@ -216,6 +216,8 @@ void aip3368h_display_low_beam_light(u8 is_display)
     }
 }
 
+// 未使用该函数
+#if 0
 /**
  * @brief 时钟图标对应的指示灯
  * 
@@ -229,6 +231,7 @@ void aip3368h_display_clock_light(u8 is_display)
         AIP3368H_DISPLAY_BUF_CLR(9, 6);
     }
 }
+#endif
 
 /**
  * @brief 显示小时
@@ -501,6 +504,8 @@ void aip3368h_display_mileage(u32 mileage)
     }
 }
 
+// 未使用该函数
+#if 0
 /**
  * @brief 油量 F 字样(full)对应的指示灯
  * 
@@ -513,7 +518,10 @@ void aip3368h_display_fuel_full_light(u8 is_display)
         AIP3368H_DISPLAY_BUF_CLR(12, 8);
     }
 }
+#endif
 
+// 未使用该函数
+#if 0
 /**
  * @brief 油量 E 字样(empty)对应的指示灯
  * 
@@ -526,6 +534,7 @@ void aip3368h_display_fuel_empty_light(u8 is_display)
         AIP3368H_DISPLAY_BUF_CLR(9, 1);
     }
 }
+#endif
 
 /**
  * @brief 油量图标对应的指示灯

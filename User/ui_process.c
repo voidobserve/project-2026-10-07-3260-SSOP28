@@ -428,28 +428,37 @@ void ui_process_fuel_lev(void)
 /**
  * @brief 显示里程，包括里程的单位
  * 
- * @note 样机显示里程，
- *      总里程和当前里程都是以x100m为单位进行显示，默认点亮小数点
+ * @note 小计里程始终以0.1km显示；总里程超过9999.9km后改为整数km显示
  *      样机默认使用公制单位，没有切换英制单位的功能
  * 
  */
 void ui_process_mileage(void)
 {
-    // u32 dislay_mileage;
-    if (instrument.is_display_total_mileage) {
-        // 显示总里程
-        // dislay_mileage = instrument.total_mileage / 100;
-        aip3368h_display_mileage(instrument.total_mileage / 100);
+    u32 display_mileage;
+    u32 total_mileage;
+    u8 display_total_mileage; // 是否显示总里程(ODO)
+    u8 display_decimal; // 是否显示小数
+
+    display_total_mileage = instrument.is_display_total_mileage;
+    if (display_total_mileage) {
+        total_mileage = instrument.total_mileage;
+        if (total_mileage > ((u32)99999 * 100)) {
+            display_mileage = total_mileage / 1000;
+            display_decimal = 0;
+        } else {
+            display_mileage = total_mileage / 100;
+            display_decimal = 1;
+        }
     } else {
-        // 显示当前里程
-        // dislay_mileage = instrument.subtotal_mileage / 100;
-        aip3368h_display_mileage(instrument.subtotal_mileage / 100);
+        display_mileage = instrument.subtotal_mileage / 100;
+        display_decimal = 1;
     }
 
-    aip3368h_display_trip_light(!instrument.is_display_total_mileage);
-    aip3368h_display_odo_light(instrument.is_display_total_mileage);
+    aip3368h_display_mileage(display_mileage);
+    aip3368h_display_mileage_point_light(display_decimal); // 里程的小数点
+    aip3368h_display_trip_light(!display_total_mileage);
+    aip3368h_display_odo_light(display_total_mileage);
 
-    // aip3368h_display_mileage(dislay_mileage);
     aip3368h_display_mile_light(0);
     aip3368h_display_km_light(1);
 }

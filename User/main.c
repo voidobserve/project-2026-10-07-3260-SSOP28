@@ -93,6 +93,7 @@ void user_init(void)
     engine_speed_scan_config(); // 发动机转速扫描的配置
 #endif
 
+    // delay_ms(10); // 等待上电稳定，再读时钟芯片
     // 这条初始化需要放在iic初始化之前,先将时钟ic的片选拉低
     aip1302_config(); // 时钟IC
     // TEST ONLY 单独测试eeprom时,确保时钟IC的片选拉低

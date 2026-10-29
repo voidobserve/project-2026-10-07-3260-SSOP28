@@ -42,7 +42,10 @@ void aip3368h_display_right_turn_light(u8 is_display);
 void aip3368h_display_high_beam_light(u8 is_display);
 void aip3368h_display_low_beam_light(u8 is_display);
 
+// 未使用该函数
+#if 0 
 void aip3368h_display_clock_light(u8 is_display);
+#endif
 void aip3368h_display_time_colon_light(u8 is_display);
 void aip3368h_display_time_hour(u8 is_display, u8 hour);
 void aip3368h_display_time_minute(u8 is_display, u8 minute);
@@ -55,8 +58,11 @@ void aip3368h_display_mile_light(u8 is_display);
 void aip3368h_display_mileage_bit_x(u8 is_display, u8 bit_x, u8 num);
 void aip3368h_display_mileage(u32 mileage);
 
+// 未使用该函数
+#if 0
 void aip3368h_display_fuel_full_light(u8 is_display);
 void aip3368h_display_fuel_empty_light(u8 is_display);
+#endif
 void aip3368h_display_fuel_icon_light(u8 is_display);
 void aip3368h_display_fuel_lev_0_red_light(u8 is_display);
 void aip3368h_display_fuel_lev(u8 fuel_lev);

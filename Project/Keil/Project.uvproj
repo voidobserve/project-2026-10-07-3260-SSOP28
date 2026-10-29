@@ -390,18 +390,6 @@
         </Group>
         <Group>
           <GroupName>LIb</GroupName>
-          <Files>
-            <File>
-              <FileName>tk_set.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\User\lib\tk_set.c</FilePath>
-            </File>
-            <File>
-              <FileName>tk_simplify_algorithm_V1.0.0.LIB</FileName>
-              <FileType>4</FileType>
-              <FilePath>..\..\User\lib\tk_simplify_algorithm_V1.0.0.LIB</FilePath>
-            </File>
-          </Files>
         </Group>
         <Group>
           <GroupName>Hardware</GroupName>

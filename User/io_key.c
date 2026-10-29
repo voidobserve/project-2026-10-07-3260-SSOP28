@@ -140,11 +140,13 @@ void io_key_handle(void)
             // 当前在设置时钟-小时，切换到设置时钟-分钟
             ui_set_state(UI_STATE_SETTING_TIME_MINUTE);
             // 切换后，将时间数据写回时钟芯片
+            aip1302_info.time_sec = 0; // 写入前，把秒数清零
             aip1302_update_time(&aip1302_info);
         } else if (UI_STATE_SETTING_TIME_MINUTE == ui_manager.state) {
             // 当前在设置时钟-分钟，切换到正常显示
             ui_set_state(UI_STATE_NORMAL);
             // 切换后，将时间数据写回时钟芯片
+            aip1302_info.time_sec = 0; // 写入前，把秒数清零
             aip1302_update_time(&aip1302_info);
         }
 

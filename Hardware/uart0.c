@@ -1,10 +1,12 @@
 #include "uart0.h"
 #include "include.h" // 使用芯片官方提供的头文件
 
+#include "user_config.h"
+
 // 设置的波特率需要适配单片机的时钟，这里直接使用了官方的代码
 #define USER_UART0_BAUD ((SYSCLK - UART0_BAUDRATE) / (UART0_BAUDRATE))
 
-#if 1 // 将uart0用作串口打印
+#if USER_DEBUG_ENABLE // 将uart0用作串口打印
 // 重写putchar()函数
 extern void uart0_send_byte(u8 byte); // 函数声明
 char putchar(char c)
@@ -12,7 +14,7 @@ char putchar(char c)
     uart0_send_byte(c);
     return c;
 }
-#endif // 将uart0用作串口打印
+
 
 void uart0_init(void)
 {
@@ -49,3 +51,6 @@ void UART0_IRQHandler(void) interrupt UART0_IRQn
     // 退出中断设置IP，不可删除
     __IRQnIPnPop(UART0_IRQn);
 }
+
+#endif // 将uart0用作串口打印
+

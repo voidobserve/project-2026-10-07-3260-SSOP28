@@ -7,7 +7,7 @@
 #define UI_RPOCESS_SPEED_PERIOD 75
 
 // ui 刷新 发动机转速 的周期，单位：ms
-#define UI_RPOCESS_ENGINE_SPEED_PERIOD 50
+#define UI_RPOCESS_ENGINE_SPEED_PERIOD 10
 
 // ui 刷新 油量挡位 的周期，单位：ms
 #define UI_RPOCESS_FUEL_LEVEL_PERIOD ((u16)5000)
