@@ -18,24 +18,29 @@
 #define FUEL_LEVEL_MAX (6)
 
 /*
-	将油量挡位与油量百分比建立映射关系
+	油量百分比均分为 6 档，对应显示：
 
-	0 ~ 16,包括 16 , 低油量提示
-	17 ~ 33,包括 33 , 1 格油量
-	34 ~ 50,包括 50 , 2 格油量
-	51 ~ 66,包括 66 , 3 格油量
-	67 ~ 83,包括 83 , 4 格油量
-	84 ~ 100,包括 100 , 5 格油量
+	0%  ~ 16% ：低油量提示（油桶常亮 + 第 0 格红灯闪烁）
+	17% ~ 33% ：两格指示灯
+	34% ~ 50% ：三格指示灯
+	51% ~ 66% ：四格指示灯
+	67% ~ 83% ：五格指示灯
+	84% ~ 100%：六格指示灯
+
+	其中 5%(含)以下 或者 没有接油量(0xFF)：油桶与红灯一起闪烁（几乎没有油量）
 */ 
 enum
 {
-    FUEL_LEV_0 = 100 / FUEL_LEVEL_MAX,     // 低油量,或者是没有接油量
-    FUEL_LEV_1 = 100 * 2 / FUEL_LEVEL_MAX, // 至少有 1 格油量
+    FUEL_LEV_0 = 100 / FUEL_LEVEL_MAX,     // 低油量档的上界
+    FUEL_LEV_1 = 100 * 2 / FUEL_LEVEL_MAX, // 两格指示灯档的上界
     FUEL_LEV_2 = 100 * 3 / FUEL_LEVEL_MAX,
     FUEL_LEV_3 = 100 * 4 / FUEL_LEVEL_MAX,
     FUEL_LEV_4 = 100 * 5 / FUEL_LEVEL_MAX,
     FUEL_LEV_5 = 100 * 6 / FUEL_LEVEL_MAX,
 };
+
+// 几乎没有油量的阈值：百分比小于等于该值（或没有接油量 0xFF）时，油桶与红灯一起闪烁
+#define FUEL_LEV_EMPTY_TH ((u8)5)
 
 void ui_process_speed_period_add(void);
 void ui_process_speed(void);

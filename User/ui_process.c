@@ -358,9 +358,42 @@ static u8 fuel_percent_to_lev(u8 fuel_percent)
     return ret;
 }
 
+/**
+ * @brief 按油量挡位刷新格子显示
+ * @param fuel_lev 油量挡位（0 ~ 5）：0 清空格子；1 ~ 5 显示 2 ~ 6 格
+ * @note 没有只亮第 0 格蓝灯的显示：挡位 1 起显示 2 格（第 0 格 + 第 1 格）
+ */
+static void fuel_lev_show(u8 fuel_lev)
+{
+    if (fuel_lev == 0) {
+        aip3368h_display_fuel_lev(0); // 低油量/几乎没有油量：格子全部熄灭
+    } else {
+        aip3368h_display_fuel_lev((u8)(fuel_lev + 1)); // 挡位 N 显示 N+1 格
+    }
+}
+
+/**
+ * @brief 根据显示的油量挡位与当前油量值，刷新油量状态
+ * @param fuel_lev 当前显示的油量挡位（0 ~ 5）
+ */
+static void fuel_state_update(u8 fuel_lev)
+{
+    if (fuel_lev != 0) {
+        instrument.fuel_state = FUEL_STATE_NORMAL;
+        return;
+    }
+    // 挡位为 0：几乎没有油量(<=5%)、没有接油量(0xFF) 或 低油量
+    if (instrument.fuel_percent == FUEL_PERCENT_NO_SENSOR ||
+        instrument.fuel_percent <= FUEL_LEV_EMPTY_TH) {
+        instrument.fuel_state = FUEL_STATE_EMPTY;
+    } else {
+        instrument.fuel_state = FUEL_STATE_LOW;
+    }
+}
+
 void ui_process_fuel_lev(void)
 {
-    static u8 is_initialized = 0;               // 是否已经初始化
+    static u8 is_initialized = 0;               // 是否已按首次检测值刷新过
     static volatile u8 fuel_lev_to_display = 0; // 最终要显示的油量等级
     volatile u8 cur_fuel_lev = 0;               // 当前油量等级
     volatile u8 fuel_lev_diff = 0; // 当前的油量等级与显示的油量等级之间的差值
@@ -371,17 +404,16 @@ void ui_process_fuel_lev(void)
     SYS_EXIT_CRITICAL_SECTION();
 
     if (0 == is_initialized) {
+        // 上电动画之后，根据第一次检测到的油量值立即刷新显示
+        if (0 == instrument.fuel_percent_valid) {
+            return; // 还没有第一次检测值，继续等待
+        }
         is_initialized = 1;
         cur_fuel_lev = fuel_percent_to_lev(instrument.fuel_percent);
         fuel_lev_to_display = cur_fuel_lev;
-
-        if (0 == fuel_lev_to_display) {
-            instrument.flag_fuel_low = 1;
-        } else {
-            instrument.flag_fuel_low = 0;
-        }
-
-        aip3368h_display_fuel_lev(fuel_lev_to_display);
+        fuel_lev_show(fuel_lev_to_display);
+        fuel_state_update(fuel_lev_to_display);
+        return;
     }
 
     cur_fuel_lev = fuel_percent_to_lev(instrument.fuel_percent);
@@ -395,17 +427,24 @@ void ui_process_fuel_lev(void)
 
     if (fuel_lev_diff == 0) {
         // 油量等级没有变化，清空计数值，再返回
-        process_period = 0;
+        SYS_ENTER_CRITICAL_SECTION();
+        ui_process_fuel_lev_period = 0;
+        SYS_EXIT_CRITICAL_SECTION();
+        fuel_state_update(fuel_lev_to_display); // 等级不变时也刷新低油量/没油状态
         return;
     } else if ((fuel_lev_diff >= 2 &&
                 process_period < UI_RPOCESS_FUEL_LEVEL_PERIOD) ||
                (fuel_lev_diff == 1 &&
                 process_period < UI_RPOCESS_FUEL_LEVEL_WHEN_CLOSE_PERIOD)) {
-        // 没有到油量挡位更新时间，直接返回
+        // 没有到油量挡位更新时间，直接返回（油量快速变化时每次也只变 1 格）
+        fuel_state_update(fuel_lev_to_display);
         return;
     }
 
-    process_period = 0;
+    // 到点：只走 1 格，重新计时
+    SYS_ENTER_CRITICAL_SECTION();
+    ui_process_fuel_lev_period = 0;
+    SYS_EXIT_CRITICAL_SECTION();
 
     if (fuel_lev_to_display < cur_fuel_lev) {
         fuel_lev_to_display++;
@@ -413,20 +452,9 @@ void ui_process_fuel_lev(void)
         fuel_lev_to_display--;
     }
 
-    if (fuel_lev_to_display == 0) {
-        // 打开低油量报警
-        if (instrument.flag_fuel_low == 0) {
-            // 如果之前没有进入低油量报警
-            aip3368h_display_fuel_lev(0); // 清空油量显示
-            instrument.flag_fuel_low = 1;
-        }
-    } else {
-        // 关闭低油量报警
-        instrument.flag_fuel_low = 0;
-        aip3368h_display_fuel_icon_light(0); // 正常显示油量时，不显示油量图标
-        // 正常显示油量
-        aip3368h_display_fuel_lev(fuel_lev_to_display);
-    }
+    fuel_lev_show(fuel_lev_to_display); // 挡位 N 显示 N+1 格，不会出现只亮第 0 格蓝灯
+    // 油量状态（油桶图标、红灯）由 ui_display_err_handle() 统一显示
+    fuel_state_update(fuel_lev_to_display);
 }
 
 /**

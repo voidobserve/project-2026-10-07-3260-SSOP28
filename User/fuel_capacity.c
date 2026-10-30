@@ -147,6 +147,7 @@ void fuel_capacity_scan(void)
     fuel_voltage = __fuel_voltage_samples_get__();
     fuel_percent = fuel_convert_voltage_to_percent(fuel_voltage);
     instrument.fuel_percent = fuel_percent;
+    instrument.fuel_percent_valid = 1; // 首次检测完成，UI 依此立即刷新油量显示
 #if USER_DEBUG_ENABLE
     // printf("fuel_voltage == %u\n", fuel_voltage);
     // printf("fuel_percent == %u\n", (u16)fuel_percent);

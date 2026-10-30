@@ -103,18 +103,23 @@ void ui_display_err_handle(void)
     // 时间冒号闪烁（样机的时间分隔符与错误提示共用一个时基）
     aip3368h_display_time_colon_light(display_err_dir);
 
-    // 低油量时，要跟其他错误显示错开，时间相位刚好相反
-    if (instrument.flag_fuel_low) {
-        // 让第 0 格油量的指示灯和油量图标指示灯一起闪烁
-
-        // 油量 图标
-        aip3368h_display_fuel_icon_light(!display_err_dir);
-        // 油量 第 0 格 指示灯
-        aip3368h_display_fuel_lev_0_red_light(!display_err_dir);
-
-    } else {
-        // 油量正常，显示 油量 图标
+    // 油量提示显示（与时间冒号共用时基、相位相反）
+    switch (instrument.fuel_state) {
+    case FUEL_STATE_LOW:
+        // 低油量：油桶图标常亮，第 0 格红灯闪烁
         aip3368h_display_fuel_icon_light(1);
+        aip3368h_display_fuel_lev_0_red_light(!display_err_dir);
+        break;
+    case FUEL_STATE_EMPTY:
+        // 几乎没有油量 或 没有接油量：油桶与第 0 格红灯一起闪烁
+        aip3368h_display_fuel_icon_light(!display_err_dir);
+        aip3368h_display_fuel_lev_0_red_light(!display_err_dir);
+        break;
+    default:
+        // 油量正常：油桶图标不亮，红灯熄灭（防止报警退出后残留点亮）
+        aip3368h_display_fuel_icon_light(0);
+        aip3368h_display_fuel_lev_0_red_light(0);
+        break;
     }
 
     if (0 == ui_manager.flag_is_err_blink) {

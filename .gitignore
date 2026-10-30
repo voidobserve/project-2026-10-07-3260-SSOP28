@@ -6,3 +6,5 @@ docs/待修改功能.md
 # 编译产物
 **/release/
 
+# PC 端临时验证工具（软件模拟），不入库
+Test/SimEeprom/

@@ -66,6 +66,17 @@ enum
 #define INSTRUMENT_TOTAL_MILEAGE_MAX    ((u32)999999 * 1000) // 999 999 km
 #define INSTRUMENT_SUBTOTAL_MILEAGE_MAX ((u32)999999 * 100)  // 99 999.9 km
 
+// 油量状态
+enum
+{
+    FUEL_STATE_NORMAL = 0, // 正常：油量格按格显示，油桶图标不亮
+    FUEL_STATE_LOW,        // 低油量：油桶图标常亮，第 0 格红灯闪烁
+    FUEL_STATE_EMPTY,      // 几乎没有油量(<=5%) 或 没有接油量(0xFF)：油桶与红灯一起闪烁
+};
+
+// 油量百分比的特殊值：没有接油量
+#define FUEL_PERCENT_NO_SENSOR ((u8)0xFF)
+
 typedef struct
 {
     u32 total_mileage;    // 大计里程（单位：m），掉电时保存在 EEPROM 里
@@ -75,7 +86,7 @@ typedef struct
 
     u16 speed; // 时速(单位：km/h，使用英制单位时，需要进行转换)
 
-    u8 fuel_percent; // 油量(单位：百分比)
+    u8 fuel_percent; // 油量(单位：百分比，0% 表示几乎没有油量，0xFF 表示没有接油量)
 
     // gear_t last_gear; // 上一次的档位
     gear_t gear; // 档位
@@ -92,7 +103,8 @@ typedef struct
     // 是否显示总里程(0：不显示ODO，显示TRIP，1：显示ODO，不显示TRIP)
     u8 is_display_total_mileage;
 
-    u8 flag_fuel_low; // 油量低标志，0：正常，1：低油量提示(或者是没有接油量)
+    u8 fuel_state;         // 油量状态（FUEL_STATE_XXX，见上方枚举）
+    u8 fuel_percent_valid; // 油量首次检测完成标志：0：还没有检测到，1：已有有效值
 
     // 提供给ui的数据
     u8 speed_to_display; // 显示屏显示的时速
