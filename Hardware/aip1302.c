@@ -3,7 +3,7 @@
 
 #if IC_1302_ENABLE
 
-volatile aip1302_info_t aip1302_info = {0};
+volatile aip1302_info_t aip1302_info;
 
 // 更新时间计数，控制更新时间
 volatile u16 aip1302_update_info_cnt = 0;
@@ -204,6 +204,32 @@ static u8 __aip1302_convert_read_byte__(const u8 cmd, const u8 byte)
     return tmp;
 }
 
+/**
+ * @brief 向 aip1302 发送一个字节，LSB 低位先行
+ *
+ * @note 调用前需保证：CE 已拉高、DATA 脚已配置为输出、SCLK 为低电平
+ *
+ * @param byte 待发送的字节
+ */
+static void __aip1302_send_byte__(u8 byte)
+{
+    u8 i = 0; // 循环计数值
+
+    for (i = 0; i < 8; i++) {
+        AIP1302_SCLK_PIN = 0;
+        AIP1302_DELAY(); // 等待电平信号稳定
+        if ((byte >> i) & 0x01) {
+            AIP1302_DATA_PIN = 1;
+        } else {
+            AIP1302_DATA_PIN = 0;
+        }
+
+        AIP1302_DELAY(); // 等待电平信号稳定
+        AIP1302_SCLK_PIN = 1;
+        AIP1302_DELAY(); // 等待电平信号稳定
+    }
+}
+
 // 从aip1302中读取出原始的数据
 static u8 __aip1302_read_byte__(const u8 cmd)
 {
@@ -218,19 +244,7 @@ static u8 __aip1302_read_byte__(const u8 cmd)
     AIP1302_CE_PIN = 1;
     AIP1302_DELAY(); // 等待电平信号稳定
 
-    for (i = 0; i < 8; i++) {
-        AIP1302_SCLK_PIN = 0;
-        AIP1302_DELAY(); // 等待电平信号稳定
-        if ((cmd >> i) & 0x01) {
-            AIP1302_DATA_PIN = 1;
-        } else {
-            AIP1302_DATA_PIN = 0;
-        }
-
-        AIP1302_DELAY(); // 等待电平信号稳定
-        AIP1302_SCLK_PIN = 1;
-        AIP1302_DELAY(); // 等待电平信号稳定
-    }
+    __aip1302_send_byte__(cmd); // 发送读命令
 
     // 将DATA脚切换为输入模式
     aip1302_data_mode_in();
@@ -278,8 +292,6 @@ u8 aip1302_read_byte(const u8 cmd)
  */
 static void __aip1302_write_byte__(u8 cmd, u8 byte)
 {
-    u8 i = 0; // 循环计数值
-
     // DATA脚--配置为输出模式
     aip1302_data_mode_out();
 
@@ -288,31 +300,8 @@ static void __aip1302_write_byte__(u8 cmd, u8 byte)
     AIP1302_CE_PIN = 1;
     AIP1302_DELAY(); // 等待电平信号稳定
 
-    for (i = 0; i < 8; i++) {
-        AIP1302_SCLK_PIN = 0;
-        AIP1302_DELAY(); // 等待电平信号稳定
-        if ((cmd >> i) & 0x01) {
-            AIP1302_DATA_PIN = 1;
-        } else {
-            AIP1302_DATA_PIN = 0;
-        }
-        AIP1302_DELAY(); // 等待电平信号稳定
-        AIP1302_SCLK_PIN = 1;
-        AIP1302_DELAY(); // 等待电平信号稳定
-    }
-
-    for (i = 0; i < 8; i++) {
-        AIP1302_SCLK_PIN = 0;
-        AIP1302_DELAY(); // 等待电平信号稳定
-        if ((byte >> i) & 0x01) {
-            AIP1302_DATA_PIN = 1;
-        } else {
-            AIP1302_DATA_PIN = 0;
-        }
-        AIP1302_DELAY(); // 等待电平信号稳定
-        AIP1302_SCLK_PIN = 1;
-        AIP1302_DELAY(); // 等待电平信号稳定
-    }
+    __aip1302_send_byte__(cmd);  // 发送写命令
+    __aip1302_send_byte__(byte); // 发送数据
 
     AIP1302_SCLK_PIN = 0;
     AIP1302_DELAY(); // 等待电平信号稳定

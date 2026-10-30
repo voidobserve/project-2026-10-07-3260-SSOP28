@@ -6,7 +6,7 @@
 #include "user_config.h"
 
 // 全局变量，存放仪表的相关数据
-volatile instrument_t instrument = {0};
+volatile instrument_t instrument;
 
 // 是否开始写入数据的时间计数
 static volatile u8 instrument_info_save_time_add_enable = 0;

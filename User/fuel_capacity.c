@@ -8,7 +8,7 @@ static volatile u8 fuel_capacity_scan_time_cnt = 0;
 
 // 油量ad值的滑动平均：
 #define SAMPLE_COUNT 20 // 样本计数
-static volatile u16 fuel_capacity_adc_val_samples[SAMPLE_COUNT] = {0};
+static volatile u16 fuel_capacity_adc_val_samples[SAMPLE_COUNT];
 static volatile u8 fuel_capacity_adc_val_sample_index = 0;
 
 static void __fuel_capacity_adc_val_samples_init__(u16 adc_val)
@@ -61,7 +61,7 @@ void fuel_capacity_scan_time_add(void)
 // 油量检测脚对应电压值的滑动平均
 // 滑动平均：
 #define FUEL_VOLTAGE_SAMPLE_COUNT 20 // 样本计数
-static volatile u16 fuel_voltage_samples[FUEL_VOLTAGE_SAMPLE_COUNT] = {0};
+static volatile u16 fuel_voltage_samples[FUEL_VOLTAGE_SAMPLE_COUNT];
 static volatile u8 fuel_voltage_sample_index = 0;
 void __fuel_voltage_samples_init__(u16 voltage)
 {

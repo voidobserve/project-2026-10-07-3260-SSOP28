@@ -8,7 +8,7 @@ static volatile u8 aip3368h_refresh_cnt = 0;
 // static volatile u16 aip3368h_refresh_cnt = 0;
 
 // 显存
-volatile u16 aip3368h_display_buff[AIP3368H_IC_NUM] = {0};
+volatile u16 aip3368h_display_buff[AIP3368H_IC_NUM];
 
 // 放在1ms的定时器中
 void aip3368h_refresh_time_add(void)

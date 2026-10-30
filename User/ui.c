@@ -89,15 +89,11 @@ void ui_set_state(ui_state_t state)
 void ui_display_err_handle(void)
 {
     static volatile u8 display_err_dir = 0;
-    u8 i;
 
     if (instrument.gear == GEAR_UNKNOWN) {
         if (0 == display_err_dir) {
             // 清除挡位显示，防止显示残留
-            for (i = 0; i < 7; i++) {
-                AIP3368H_DISPLAY_BUF_CLR(gear_map[i].buff_index,
-                                         gear_map[i].bit_offset);
-            }
+            aip3368h_display_gear(GEAR_UNKNOWN);
         } else {
             AIP3368H_DISPLAY_BUF_SET(gear_map[SEG_IDX_G].buff_index,
                                      gear_map[SEG_IDX_G].bit_offset);

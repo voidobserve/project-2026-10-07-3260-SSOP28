@@ -180,40 +180,60 @@ static const aip3368h_display_mapping_t speed_bit_1_map[] = {
     {6, 9}, {6, 10}, {6, 11}, {6, 12}, {6, 13}, {6, 14}, {6, 15},
 };
 
-void aip3368h_display_left_turn_light(u8 is_display)
+/**
+ * @brief 设置显存中的单个 bit（指示灯 / 数码管的某一段）
+ *
+ * @param buff_index 显存数组下标
+ * @param bit_offset 显存元素中的第 x 位（从右往左，从 0 开始）
+ * @param is_display 1：点亮，0：熄灭
+ */
+static void __aip3368h_display_set_bit__(u8 buff_index, u8 bit_offset,
+                                          u8 is_display)
 {
     if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(9, 7);
+        AIP3368H_DISPLAY_BUF_SET(buff_index, bit_offset);
     } else {
-        AIP3368H_DISPLAY_BUF_CLR(9, 7);
+        AIP3368H_DISPLAY_BUF_CLR(buff_index, bit_offset);
     }
+}
+
+/**
+ * @brief 按段码显示一位数码管（a ~ g 段）
+ *
+ * @param map        该位数码管 a ~ g 段对应的映射表（共 7 项）
+ * @param segment_code 段码，bit0=a ... bit6=g
+ * @param is_display 1：显示，0：清空该位
+ */
+static void __aip3368h_display_segments__(
+    const aip3368h_display_mapping_t *map, u8 segment_code, u8 is_display)
+{
+    u8 i;
+
+    for (i = 0; i < 7; i++) {
+        __aip3368h_display_set_bit__(
+            map[i].buff_index, map[i].bit_offset,
+            is_display && (segment_code & (0x01 << i)));
+    }
+}
+
+void aip3368h_display_left_turn_light(u8 is_display)
+{
+    __aip3368h_display_set_bit__(9, 7, is_display);
 }
 
 void aip3368h_display_right_turn_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(5, 0);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(5, 0);
-    }
+    __aip3368h_display_set_bit__(5, 0, is_display);
 }
 
 void aip3368h_display_high_beam_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(5, 1);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(5, 1);
-    }
+    __aip3368h_display_set_bit__(5, 1, is_display);
 }
 
 void aip3368h_display_low_beam_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(9, 8);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(9, 8);
-    }
+    __aip3368h_display_set_bit__(9, 8, is_display);
 }
 
 // 未使用该函数
@@ -245,54 +265,23 @@ void aip3368h_display_clock_light(u8 is_display)
  */
 void aip3368h_display_time_hour(u8 is_display, u8 hour)
 {
-    u8 i;
-    u8 segment_code; // 段码
-
     if (is_display) {
-        // 得到小时个位对应的段码
-        segment_code = digit_segment_code[hour % 10];
-        // 遍历 a ~ g 段数码管，设置显示
-        for (i = 0; i < 7; i++) {
-            // 检查该段是否需要点亮 ( segment_code 的对应 bit 是否为1)
-            if (segment_code & (0x01 << i)) {
-                AIP3368H_DISPLAY_BUF_SET(hour_bit_0_map[i].buff_index,
-                                         hour_bit_0_map[i].bit_offset);
-            } else {
-                AIP3368H_DISPLAY_BUF_CLR(hour_bit_0_map[i].buff_index,
-                                         hour_bit_0_map[i].bit_offset);
-            }
-        }
+        // 小时个位
+        __aip3368h_display_segments__(hour_bit_0_map,
+                                      digit_segment_code[hour % 10], 1);
 
         if (hour >= 10) {
-            // 得到小时十位对应的段码
-            segment_code = digit_segment_code[hour / 10];
-            // 遍历 a ~ g 段数码管，设置显示
-            for (i = 0; i < 7; i++) {
-                // 检查该段是否需要点亮 ( segment_code 的对应 bit 是否为1)
-                if (segment_code & (0x01 << i)) {
-                    AIP3368H_DISPLAY_BUF_SET(hour_bit_1_map[i].buff_index,
-                                             hour_bit_1_map[i].bit_offset);
-                } else {
-                    AIP3368H_DISPLAY_BUF_CLR(hour_bit_1_map[i].buff_index,
-                                             hour_bit_1_map[i].bit_offset);
-                }
-            }
+            // 小时十位
+            __aip3368h_display_segments__(hour_bit_1_map,
+                                          digit_segment_code[hour / 10], 1);
         } else {
-            // hour < 10， 清空小时的十位显示
-            // 遍历 a ~ g 段数码管，清空显示
-            for (i = 0; i < 7; i++) {
-                AIP3368H_DISPLAY_BUF_CLR(hour_bit_1_map[i].buff_index,
-                                         hour_bit_1_map[i].bit_offset);
-            }
+            // hour < 10，清空小时的十位显示
+            __aip3368h_display_segments__(hour_bit_1_map, 0, 0);
         }
     } else {
-        // 遍历 a ~ g 段数码管，清空显示
-        for (i = 0; i < 7; i++) {
-            AIP3368H_DISPLAY_BUF_CLR(hour_bit_0_map[i].buff_index,
-                                     hour_bit_0_map[i].bit_offset);
-            AIP3368H_DISPLAY_BUF_CLR(hour_bit_1_map[i].buff_index,
-                                     hour_bit_1_map[i].bit_offset);
-        }
+        // 清空小时个位、十位的显示
+        __aip3368h_display_segments__(hour_bit_0_map, 0, 0);
+        __aip3368h_display_segments__(hour_bit_1_map, 0, 0);
     }
 }
 
@@ -307,43 +296,17 @@ void aip3368h_display_time_hour(u8 is_display, u8 hour)
  */
 void aip3368h_display_time_minute(u8 is_display, u8 minute)
 {
-    u8 i;
-    u8 segment_code; // 段码
     if (is_display) {
-        segment_code = digit_segment_code[minute % 10];
-        // 遍历 a ~ g 段数码管，设置显示
-        for (i = 0; i < 7; i++) {
-            // 检查该段是否需要点亮 ( segment_code 的对应 bit 是否为1)
-            if (segment_code & (0x01 << i)) {
-                AIP3368H_DISPLAY_BUF_SET(minute_bit_0_map[i].buff_index,
-                                         minute_bit_0_map[i].bit_offset);
-            } else {
-                AIP3368H_DISPLAY_BUF_CLR(minute_bit_0_map[i].buff_index,
-                                         minute_bit_0_map[i].bit_offset);
-            }
-        }
-
-        segment_code = digit_segment_code[minute / 10];
-        // 遍历 a ~ g 段数码管，设置显示
-        for (i = 0; i < 7; i++) {
-            // 检查该段是否需要点亮 ( segment_code 的对应 bit 是否为1)
-            if (segment_code & (0x01 << i)) {
-                AIP3368H_DISPLAY_BUF_SET(minute_bit_1_map[i].buff_index,
-                                         minute_bit_1_map[i].bit_offset);
-            } else {
-                AIP3368H_DISPLAY_BUF_CLR(minute_bit_1_map[i].buff_index,
-                                         minute_bit_1_map[i].bit_offset);
-            }
-        }
-
+        // 分钟个位
+        __aip3368h_display_segments__(minute_bit_0_map,
+                                      digit_segment_code[minute % 10], 1);
+        // 分钟十位
+        __aip3368h_display_segments__(minute_bit_1_map,
+                                      digit_segment_code[minute / 10], 1);
     } else {
-        // 遍历 a ~ g 段数码管，清空显示
-        for (i = 0; i < 7; i++) {
-            AIP3368H_DISPLAY_BUF_CLR(minute_bit_0_map[i].buff_index,
-                                     minute_bit_0_map[i].bit_offset);
-            AIP3368H_DISPLAY_BUF_CLR(minute_bit_1_map[i].buff_index,
-                                     minute_bit_1_map[i].bit_offset);
-        }
+        // 清空分钟个位、十位的显示
+        __aip3368h_display_segments__(minute_bit_0_map, 0, 0);
+        __aip3368h_display_segments__(minute_bit_1_map, 0, 0);
     }
 }
 
@@ -355,11 +318,7 @@ void aip3368h_display_time_minute(u8 is_display, u8 minute)
  */
 void aip3368h_display_time_colon_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(8, 7);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(8, 7);
-    }
+    __aip3368h_display_set_bit__(8, 7, is_display);
 }
 
 /**
@@ -369,66 +328,46 @@ void aip3368h_display_time_colon_light(u8 is_display)
  */
 void aip3368h_display_mileage_point_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(11, 8);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(11, 8);
-    }
+    __aip3368h_display_set_bit__(11, 8, is_display);
 }
 
 /**
  * @brief 里程 TRIP 字样对应的指示灯
- * 
- * @param is_display 
+ *
+ * @param is_display
  */
 void aip3368h_display_trip_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(10, 7);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(10, 7);
-    }
+    __aip3368h_display_set_bit__(10, 7, is_display);
 }
 
 /**
  * @brief 里程 ODO 字样对应的指示灯
- * 
+ *
  */
 void aip3368h_display_odo_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(10, 8);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(10, 8);
-    }
+    __aip3368h_display_set_bit__(10, 8, is_display);
 }
 
 /**
  * @brief 里程 km 字样对应的指示灯
- * 
- * @param is_display 
+ *
+ * @param is_display
  */
 void aip3368h_display_km_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(9, 0);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(9, 0);
-    }
+    __aip3368h_display_set_bit__(9, 0, is_display);
 }
 
 /**
  * @brief 里程 mile 字样对应的指示灯
- * 
- * @param is_display 
+ *
+ * @param is_display
  */
 void aip3368h_display_mile_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(11, 7);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(11, 7);
-    }
+    __aip3368h_display_set_bit__(11, 7, is_display);
 }
 
 /**
@@ -438,24 +377,12 @@ void aip3368h_display_mile_light(u8 is_display)
  *          如果为0，参数列表后续的参数无效
  * @param bit_x 数码管的位置，从右往左排序，从 0 开始
  * @param num
- * 
+ *
  */
 void aip3368h_display_mileage_bit_x(u8 is_display, u8 bit_x, u8 num)
 {
-    u8 i;
-    u8 segment_code = 0;
-    segment_code = digit_segment_code[num];
-    // 遍历数码管的 a ~ g 段
-    for (i = 0; i < 7; i++) {
-        if (is_display && (segment_code & (0x01 << i))) {
-            // 如果当前位对应的数码管要显示，并且当前段对应的指示灯要点亮
-            AIP3368H_DISPLAY_BUF_SET(mileage_map[bit_x][i].buff_index,
-                                     mileage_map[bit_x][i].bit_offset);
-        } else {
-            AIP3368H_DISPLAY_BUF_CLR(mileage_map[bit_x][i].buff_index,
-                                     mileage_map[bit_x][i].bit_offset);
-        }
-    }
+    __aip3368h_display_segments__(mileage_map[bit_x], digit_segment_code[num],
+                                  is_display);
 }
 
 /**
@@ -542,34 +469,26 @@ void aip3368h_display_fuel_empty_light(u8 is_display)
  */
 void aip3368h_display_fuel_icon_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(12, 7);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(12, 7);
-    }
+    __aip3368h_display_set_bit__(12, 7, is_display);
 }
 
 /**
  * @brief 油量第 0 格，红色指示灯
- * 
+ *
  */
 void aip3368h_display_fuel_lev_0_red_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(12, 0);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(12, 0);
-    }
+    __aip3368h_display_set_bit__(12, 0, is_display);
 }
 
 /**
  * @brief 油量格子数指示灯(不包括第 0 格红色指示灯)
- * 
- * @param is_display 
+ *
+ * @param is_display
  * @param fuel_lev 1 ~ 6
  *      0：不显示
  *      1： 显示 1 格
- *      2： 显示 2 格   
+ *      2： 显示 2 格
  *      ...
  */
 void aip3368h_display_fuel_lev(u8 fuel_lev)
@@ -577,29 +496,20 @@ void aip3368h_display_fuel_lev(u8 fuel_lev)
     u8 i;
 
     for (i = 0; i < ARRAY_SIZE(fuel_lev_map); i++) {
-        if (i < fuel_lev) {
-            AIP3368H_DISPLAY_BUF_SET(fuel_lev_map[i].buff_index,
-                                     fuel_lev_map[i].bit_offset);
-        } else {
-            AIP3368H_DISPLAY_BUF_CLR(fuel_lev_map[i].buff_index,
-                                     fuel_lev_map[i].bit_offset);
-        }
+        __aip3368h_display_set_bit__(fuel_lev_map[i].buff_index,
+                                     fuel_lev_map[i].bit_offset, (i < fuel_lev));
     }
 }
 
 /**
  * @brief 根据索引，点亮发动机转速边框对应的指示灯
- * 
+ *
  */
 void aip3368h_display_engine_speed_frame_by_idx(u8 is_display, u8 idx)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(engine_speed_frame_map[idx].buff_index,
-                                 engine_speed_frame_map[idx].bit_offset);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(engine_speed_frame_map[idx].buff_index,
-                                 engine_speed_frame_map[idx].bit_offset);
-    }
+    __aip3368h_display_set_bit__(engine_speed_frame_map[idx].buff_index,
+                                 engine_speed_frame_map[idx].bit_offset,
+                                 is_display);
 }
 
 /**
@@ -617,24 +527,16 @@ void aip3368h_display_engine_speed_lev(u16 engine_speed_lev)
     u8 i;
 
     for (i = 0; i < ARRAY_SIZE(engine_speed_lev_map); i++) {
-        if (i < engine_speed_lev) {
-            AIP3368H_DISPLAY_BUF_SET(engine_speed_lev_map[i].buff_index,
-                                     engine_speed_lev_map[i].bit_offset);
-        } else {
-            AIP3368H_DISPLAY_BUF_CLR(engine_speed_lev_map[i].buff_index,
-                                     engine_speed_lev_map[i].bit_offset);
-        }
+        __aip3368h_display_set_bit__(engine_speed_lev_map[i].buff_index,
+                                     engine_speed_lev_map[i].bit_offset,
+                                     (i < engine_speed_lev));
     }
 }
 
 // n挡图标对应的指示灯
 void aip3368h_display_gear_n_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(5, 10);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(5, 10);
-    }
+    __aip3368h_display_set_bit__(5, 10, is_display);
 }
 
 /**
@@ -650,46 +552,25 @@ void aip3368h_display_gear_n_light(u8 is_display)
  */
 void aip3368h_display_gear(u8 gear)
 {
-    u8 i;
-    u8 segment_code;
-
     aip3368h_display_gear_n_light(0);
-    // 遍历 a ~ g 段，清空对应显示
-    for (i = 0; i < 7; i++) {
-        AIP3368H_DISPLAY_BUF_CLR(gear_map[i].buff_index,
-                                 gear_map[i].bit_offset);
-    }
+    // 清空挡位对应的 a ~ g 段
+    __aip3368h_display_segments__(gear_map, 0, 0);
 
     if (0 == gear) {
         aip3368h_display_gear_n_light(1);
     } else if (gear <= 6) {
-        segment_code = digit_segment_code[gear];
-        for (i = 0; i < 7; i++) {
-            // 检查该段是否需要点亮 (segment_code的对应bit是否为1)
-            if (segment_code & (0x01 << i)) {
-                AIP3368H_DISPLAY_BUF_SET(gear_map[i].buff_index,
-                                         gear_map[i].bit_offset);
-            }
-        }
+        __aip3368h_display_segments__(gear_map, digit_segment_code[gear], 1);
     }
 }
 
 void aip3368h_display_mph_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(5, 14);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(5, 14);
-    }
+    __aip3368h_display_set_bit__(5, 14, is_display);
 }
 
 void aip3368h_display_kmh_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(5, 15);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(5, 15);
-    }
+    __aip3368h_display_set_bit__(5, 15, is_display);
 }
 
 /**
@@ -706,9 +587,8 @@ void aip3368h_display_kmh_light(u8 is_display)
  */
 void aip3368h_display_speed_bit(u8 is_display, u8 bit_index, u8 bit_value)
 {
-    u8 i;
-    u8 segment_code;
-    aip3368h_display_mapping_t *buf_ptr = 0;
+    const aip3368h_display_mapping_t *buf_ptr;
+    u8 segment_code = 0;
 
     if (bit_index < 2) {
         // 第 0 位、第 1 位才使用到段码
@@ -723,30 +603,15 @@ void aip3368h_display_speed_bit(u8 is_display, u8 bit_index, u8 bit_value)
         buf_ptr = speed_bit_1_map;
         break;
     case 2:
-        if (is_display) {
-            AIP3368H_DISPLAY_BUF_SET(5, 2);
-            AIP3368H_DISPLAY_BUF_SET(5, 3);
-        } else {
-            AIP3368H_DISPLAY_BUF_CLR(5, 2);
-            AIP3368H_DISPLAY_BUF_CLR(5, 3);
-        }
-
-        // 函数直接返回，不再处理后续操作
+        // 百位只有 b 段和 c 段数码管
+        __aip3368h_display_set_bit__(5, 2, is_display);
+        __aip3368h_display_set_bit__(5, 3, is_display);
         return;
-        break;
     default:
-        break;
+        return;
     }
 
-    for (i = 0; i < 7; i++) {
-        if (is_display && (segment_code & (0x01 << i))) {
-            AIP3368H_DISPLAY_BUF_SET(buf_ptr[i].buff_index,
-                                     buf_ptr[i].bit_offset);
-        } else {
-            AIP3368H_DISPLAY_BUF_CLR(buf_ptr[i].buff_index,
-                                     buf_ptr[i].bit_offset);
-        }
-    }
+    __aip3368h_display_segments__(buf_ptr, segment_code, is_display);
 }
 
 /**
@@ -801,29 +666,17 @@ void aip3368h_display_speed(u8 speed)
 
 void aip3368h_display_abs_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(5, 11);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(5, 11);
-    }
+    __aip3368h_display_set_bit__(5, 11, is_display);
 }
 
 void aip3368h_display_engine_err_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(5, 13);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(5, 13);
-    }
+    __aip3368h_display_set_bit__(5, 13, is_display);
 }
 
 void aip3368h_display_bat_err_light(u8 is_display)
 {
-    if (is_display) {
-        AIP3368H_DISPLAY_BUF_SET(5, 12);
-    } else {
-        AIP3368H_DISPLAY_BUF_CLR(5, 12);
-    }
+    __aip3368h_display_set_bit__(5, 12, is_display);
 }
 
 #if AIP3368H_DISPLAY_TEST_ENABLE

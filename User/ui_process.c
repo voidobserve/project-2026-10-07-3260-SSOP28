@@ -13,7 +13,9 @@
 
 // 时速显示对应的滑动平均滤波：
 #define SPEED_FILTER_ARRAY_SIZE (40) // 滤波数组大小
-static volatile u8 speed_filter_array[SPEED_FILTER_ARRAY_SIZE] = {0};
+// 不写显式初值：STARTUP.A51 启动时会把 XDATA 整片清零，
+// 显式 = {0} 反而会在代码区生成一份初值镜像
+static volatile u8 speed_filter_array[SPEED_FILTER_ARRAY_SIZE];
 static volatile u8 speed_filter_index = 0;
 
 // ui处理时速显示的周期
@@ -180,6 +182,33 @@ void ui_process_engine_speed_frame_wave_10ms_isr(void)
 }
 
 /**
+ * @brief 点亮发动机转速边框中间的三个灯
+ */
+static void engine_speed_frame_wave_show_center(void)
+{
+    const u8 center_idx = 10; // 中间位置
+
+    aip3368h_display_engine_speed_frame_by_idx(1, center_idx - 1);
+    aip3368h_display_engine_speed_frame_by_idx(1, center_idx);
+    aip3368h_display_engine_speed_frame_by_idx(1, center_idx + 1);
+}
+
+/**
+ * @brief 点亮向两侧移动的四个灯
+ *
+ * @param spread 距离中间位置的扩散量
+ */
+static void engine_speed_frame_wave_show_spread(s8 spread)
+{
+    const u8 center_idx = 10; // 中间位置
+
+    aip3368h_display_engine_speed_frame_by_idx(1, center_idx - 1 - spread);
+    aip3368h_display_engine_speed_frame_by_idx(1, center_idx - 2 - spread);
+    aip3368h_display_engine_speed_frame_by_idx(1, center_idx + 1 + spread);
+    aip3368h_display_engine_speed_frame_by_idx(1, center_idx + 2 + spread);
+}
+
+/**
  * @brief 发动机转速边框动画：中间三盏灯向两侧扩散，再往中间回收，循环播放
  *
  *  动画过程：
@@ -190,10 +219,9 @@ void ui_process_engine_speed_frame_wave_10ms_isr(void)
  */
 void ui_process_engine_speed_frame_wave(void)
 {
-    static s8 dir = 0;        // 0：向两侧扩散，1：向中间回收
-    static s8 spread = -1;    // -1：中间三个灯，0..8：向两侧扩散/回收
-    const s8 center_idx = 10; // 中间位置
-    const s8 max_spread = 8;  // 扩散到边界位置
+    static s8 dir = 0;     // 0：向两侧扩散，1：向中间回收
+    static s8 spread = -1; // -1：中间三个灯，0..8：向两侧扩散/回收
+    const s8 max_spread = 8; // 扩散到边界位置
     u8 i;
 
     if (ui_process_engine_speed_frame_wave_period >= (500 / 10)) {
@@ -208,56 +236,31 @@ void ui_process_engine_speed_frame_wave(void)
         aip3368h_display_engine_speed_frame_by_idx(0, i);
     }
 
-    if (0 == dir) {
-        if (spread < 0) {
-            // 从中间三个灯开始
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx - 1);
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx);
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx + 1);
-            spread = 0;
-        } else {
-            // 两个灯往左侧移动，两个灯往右侧移动
-            aip3368h_display_engine_speed_frame_by_idx(1,
-                                                       center_idx - 1 - spread);
-            aip3368h_display_engine_speed_frame_by_idx(1,
-                                                       center_idx - 2 - spread);
-            aip3368h_display_engine_speed_frame_by_idx(1,
-                                                       center_idx + 1 + spread);
-            aip3368h_display_engine_speed_frame_by_idx(1,
-                                                       center_idx + 2 + spread);
+    if (spread < 0) {
+        // 中间三个灯（扩散开始时、回收到中间时）
+        engine_speed_frame_wave_show_center();
+        dir = 0;
+        spread = 0;
+        return;
+    }
 
-            if (spread >= max_spread) {
-                dir = 1;
-                spread = max_spread - 1;
-            } else {
-                spread++;
-            }
+    // 两个灯往左侧移动，两个灯往右侧移动
+    engine_speed_frame_wave_show_spread(spread);
+
+    if (0 == dir) {
+        if (spread >= max_spread) {
+            dir = 1;
+            spread = max_spread - 1;
+        } else {
+            spread++;
         }
     } else {
-        if (spread < 0) {
-            // 回收到中间时，仍然保持三个中心灯的状态
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx - 1);
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx);
-            aip3368h_display_engine_speed_frame_by_idx(1, center_idx + 1);
+        // 碰到边界后，直接开始向中间回收，不再多停一拍
+        if (spread <= 0) {
             dir = 0;
-            spread = 0;
+            spread = -1;
         } else {
-            // 碰到边界后，直接开始向中间回收，不再多停一拍
-            aip3368h_display_engine_speed_frame_by_idx(1,
-                                                       center_idx - 1 - spread);
-            aip3368h_display_engine_speed_frame_by_idx(1,
-                                                       center_idx - 2 - spread);
-            aip3368h_display_engine_speed_frame_by_idx(1,
-                                                       center_idx + 1 + spread);
-            aip3368h_display_engine_speed_frame_by_idx(1,
-                                                       center_idx + 2 + spread);
-
-            if (spread <= 0) {
-                dir = 0;
-                spread = -1;
-            } else {
-                spread--;
-            }
+            spread--;
         }
     }
 }
