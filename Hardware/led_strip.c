@@ -9,35 +9,58 @@
 #include <intrins.h>
 
 /* NOP 组合宏（1 个 _nop_() = 1 个指令周期 = 20.833ns @1T/48MHz） */
-#define LED_STRIP_NOP1()   _nop_()
-#define LED_STRIP_NOP2()   LED_STRIP_NOP1(); LED_STRIP_NOP1()
-#define LED_STRIP_NOP4()   LED_STRIP_NOP2(); LED_STRIP_NOP2()
-#define LED_STRIP_NOP8()   LED_STRIP_NOP4(); LED_STRIP_NOP4()
-#define LED_STRIP_NOP16()  LED_STRIP_NOP8(); LED_STRIP_NOP8()
-#define LED_STRIP_NOP32()  LED_STRIP_NOP16(); LED_STRIP_NOP16()
-#define LED_STRIP_NOP64()  LED_STRIP_NOP32(); LED_STRIP_NOP32()
-#define LED_STRIP_NOP128() LED_STRIP_NOP64(); LED_STRIP_NOP64()
-#define LED_STRIP_NOP256() LED_STRIP_NOP128(); LED_STRIP_NOP128()
+#define LED_STRIP_NOP1() _nop_()
+#define LED_STRIP_NOP2()                                                       \
+    LED_STRIP_NOP1();                                                          \
+    LED_STRIP_NOP1()
+#define LED_STRIP_NOP4()                                                       \
+    LED_STRIP_NOP2();                                                          \
+    LED_STRIP_NOP2()
+#define LED_STRIP_NOP8()                                                       \
+    LED_STRIP_NOP4();                                                          \
+    LED_STRIP_NOP4()
+#define LED_STRIP_NOP16()                                                      \
+    LED_STRIP_NOP8();                                                          \
+    LED_STRIP_NOP8()
+#define LED_STRIP_NOP32()                                                      \
+    LED_STRIP_NOP16();                                                         \
+    LED_STRIP_NOP16()
+#define LED_STRIP_NOP64()                                                      \
+    LED_STRIP_NOP32();                                                         \
+    LED_STRIP_NOP32()
+#define LED_STRIP_NOP128()                                                     \
+    LED_STRIP_NOP64();                                                         \
+    LED_STRIP_NOP64()
+#define LED_STRIP_NOP256()                                                     \
+    LED_STRIP_NOP128();                                                        \
+    LED_STRIP_NOP128()
 
 /*
  * 定长延时：由 LED_STRIP_xxx_NOPS 个 NOP 组成
  *（组合式展开保证周期精确，校准时按注释增减 NOP）
+ * 计数依据：取指=系统时钟/2（FLASH_TIMEREG1=0x54）后 1 个 NOP = 41.67ns，
+ * 实测开销：T0H/T1H 路径约 2/5 条指令、字节内低电平路径约 29 条、字节边界约 102 条。
  */
 #define LED_STRIP_DELAY_T0H()                                                  \
     do {                                                                       \
-        LED_STRIP_NOP16(); LED_STRIP_NOP2(); LED_STRIP_NOP1(); /* 19 */        \
+        LED_STRIP_NOP8(); /* 8 + 开销 2 = 10 周期 = 416.7ns */                 \
     } while (0)
 #define LED_STRIP_DELAY_T1H()                                                  \
     do {                                                                       \
-        LED_STRIP_NOP32(); LED_STRIP_NOP1(); /* 33 */                          \
+        LED_STRIP_NOP8();                                                      \
+        LED_STRIP_NOP4(); /* 12 + 开销 5 = 17 周期 = 708.3ns */                \
     } while (0)
 #define LED_STRIP_DELAY_BIT_LOW()                                              \
     do {                                                                       \
-        LED_STRIP_NOP64(); LED_STRIP_NOP4(); LED_STRIP_NOP2(); /* 70 */        \
+        LED_STRIP_NOP8();                                                      \
+        LED_STRIP_NOP4();                                                      \
+        LED_STRIP_NOP2(); /* 14 + 29 = 1.79us */                               \
     } while (0)
 #define LED_STRIP_DELAY_BYTE_GAP()                                             \
     do {                                                                       \
-        LED_STRIP_NOP256(); LED_STRIP_NOP4(); LED_STRIP_NOP2(); /* 262 */      \
+        LED_STRIP_NOP32();                                                     \
+        LED_STRIP_NOP4();                                                      \
+        LED_STRIP_NOP1(); /* 37 + 102 = 5.79us */                              \
     } while (0)
 
 /**

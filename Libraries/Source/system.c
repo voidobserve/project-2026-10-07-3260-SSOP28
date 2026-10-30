@@ -50,7 +50,7 @@ void delay_ms(u16 ms)
 {
   while (ms--)
   {
-    delay(1450);
+    delay(2900); // 取指提速 2 倍后计数同步翻倍，保持 1ms 墙钟不变
     WDT_KEY = WDT_KEY_VAL(0xAA); // 喂狗并清除 wdt_pending
   }
 }
@@ -69,8 +69,7 @@ void system_init(void)
   FLASH_TIMEREG0 = 0x55;
   /* 如果系统时钟配置为48mhz，则FLASH_TIMEREG1 = 0x54 */
   /* 如果系统时钟配置为24mhz-12mhz，则FLASH_TIMEREG1 = 0x50 */
-  FLASH_TIMEREG1 = 0x5C;              // FLASH访问速度 = 系统时钟/4
-  // FLASH_TIMEREG1 = 0x54; // FLASH访问速度 = 系统时钟 
+  FLASH_TIMEREG1 = 0x54;              // FLASH访问速度 = 系统时钟/2（厂商注释的 48MHz 推荐值，指令周期 41.67ns）
   CLK_CON2 = 0x50 | CLK_SYS_DIV(0x0); // 系统时钟不分频 HIRC48M
   CLK_CON0 = CLK_SYSCLK_SEL(0x3);     // 系统时钟选择
   CLK_CON6 = CLK_FLASH_DIV(47);       // FLASH烧写时钟48分频：1M

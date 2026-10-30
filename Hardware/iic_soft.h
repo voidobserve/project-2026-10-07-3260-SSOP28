@@ -20,8 +20,8 @@
 #define IIC_SOFT_SDA_PULL_MASK GPIO_P23_PULL_UP(0x01)
 #define IIC_SOFT_SDA_FOUT_REG  FOUT_S23
 
-/* 总线延时，48MHz 主频下 delay(4) 约为几百 ns */
-#define IIC_SOFT_DELAY() delay(5)
+/* 总线延时，取指=系统时钟/2（FLASH_TIMEREG1=0x54）后 delay(10) 与提速前 delay(5) 墙钟一致（约几百 ns） */
+#define IIC_SOFT_DELAY() delay(10)
 
 /* 7 位器件地址 + 读写位，组成完整的 8 位设备地址 */
 #define IIC_SOFT_DEV_ADDR_W(dev) ((u8)(((u8)(dev) << 1) | 0x00)) /* 写 */

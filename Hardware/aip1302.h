@@ -40,9 +40,10 @@ typedef struct
 
 #define AIP1302_RAM_START_ADDR ((u8)0xC0) // RAM起始地址
 
-// 48MHz 主频下 delay(4) 仅约 150~350ns，早于 DS1302 数据输出延迟 tCDD(最大500ns)，
-// 会导致采样过早、读出固定的交替值(如秒=85即0x55)。加大延时保证电平稳定后再采样。
-#define AIP1302_DELAY() delay(4)
+// 取指=系统时钟/2（FLASH_TIMEREG1=0x54）后 delay(8) ≈ 150~350ns，与提速前 delay(4) 墙钟一致；
+// 早于 DS1302 数据输出延迟 tCDD(最大500ns)会导致采样过早、读出固定的交替值(如秒=85即0x55)，
+// 若实测仍偏早，继续加大延时保证电平稳定后再采样。
+#define AIP1302_DELAY() delay(8)
 
 extern volatile aip1302_info_t aip1302_info; 
 extern volatile bit flag_is_update_aip1302_info;
