@@ -232,7 +232,7 @@ void ui_process_engine_speed_frame_wave(void)
     }
 
     // 清空当前所有发动机转速边框灯
-    for (i = 0; i < ARRAY_SIZE(engine_speed_frame_map); i++) {
+    for (i = 0; i < AIP3368H_DISPLAY_ENGINE_SPEED_FRAME_NUMS; i++) {
         aip3368h_display_engine_speed_frame_by_idx(0, i);
     }
 

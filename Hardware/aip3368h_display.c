@@ -20,165 +20,54 @@ static const u8 digit_segment_code[10] = {
 };
 
 /*
-    指示灯和显存的映射关系
-    小时个位对应的指示灯
-    对应的显存：  
+    以下是“位置表”：每一项描述 1 位数码管（或 1 段连续排列的灯）在显存中的起点，
+    不再逐段列出 a ~ g，省掉 6/7 的常量空间。
+
+    bit_offset 的含义：
+        - 数码管：该位 a 段所在的位（b 段 = bit_offset + 1 ... g 段 = bit_offset + 6）
+        - 连续段的灯：该段第 0 个灯所在的位，每段最多 16 个（即一个显存元素的 0 ~ 15 位）
 */
-static const aip3368h_display_mapping_t hour_bit_0_map[] = {
-    // a 段 ~ g 段
-    {8, 9}, {8, 10}, {8, 11}, {8, 12}, {8, 13}, {8, 14}, {8, 15},
+
+// 时间：小时个位、小时十位、分钟个位、分钟十位
+static const aip3368h_display_mapping_t time_digit_map[] = {
+    {8, 9}, // 小时个位
+    {9, 9}, // 小时十位
+    {7, 0}, // 分钟个位
+    {8, 0}, // 分钟十位
 };
 
-/*
-    指示灯和显存的映射关系
-    小时十位对应的指示灯
-    对应的显存：  
-*/
-static const aip3368h_display_mapping_t hour_bit_1_map[] = {
-    // a 段 ~ g 段
-    {9, 9}, {9, 10}, {9, 11}, {9, 12}, {9, 13}, {9, 14}, {9, 15},
+// 里程：第 0 ~ 4 位数码管（从右往左）
+static const aip3368h_display_mapping_t mileage_map[] = {
+    {11, 0}, {11, 9}, {10, 0}, {10, 9}, {12, 9},
 };
 
-/*
-    指示灯和显存的映射关系
-    分钟个位对应的指示灯
-    对应的显存：  
-*/
-static const aip3368h_display_mapping_t minute_bit_0_map[] = {
-    // a 段 ~ g 段
-    {7, 0}, {7, 1}, {7, 2}, {7, 3}, {7, 4}, {7, 5}, {7, 6},
+// 时速：第 0、1 位数码管（从右往左）
+static const aip3368h_display_mapping_t speed_digit_map[] = {
+    {6, 0},
+    {6, 9},
 };
 
-/*
-    指示灯和显存的映射关系
-    分钟十位对应的指示灯
-    对应的显存：  
-*/
-static const aip3368h_display_mapping_t minute_bit_1_map[] = {
-    // a 段 ~ g 段
-    {8, 0}, {8, 1}, {8, 2}, {8, 3}, {8, 4}, {8, 5}, {8, 6},
-};
-
-/*
-    指示灯和显存的映射关系
-    里程对应的指示灯
-    对应的显存：  
-
-    [0][0] ~ [0][6]，里程第 0 位数码管的a段~g段（位从右往左，从0开始）
-    [1][0] ~ [1][6]，里程第 1 位数码管的a段~g段（位从右往左，从0开始）
-*/
-static const aip3368h_display_mapping_t mileage_map[][7] = {
-    {
-        {11, 0},
-        {11, 1},
-        {11, 2},
-        {11, 3},
-        {11, 4},
-        {11, 5},
-        {11, 6},
-    },
-
-    {
-        {11, 9},
-        {11, 10},
-        {11, 11},
-        {11, 12},
-        {11, 13},
-        {11, 14},
-        {11, 15},
-    },
-
-    {
-        {10, 0},
-        {10, 1},
-        {10, 2},
-        {10, 3},
-        {10, 4},
-        {10, 5},
-        {10, 6},
-    },
-
-    {
-        {10, 9},
-        {10, 10},
-        {10, 11},
-        {10, 12},
-        {10, 13},
-        {10, 14},
-        {10, 15},
-    },
-
-    {
-        {12, 9},
-        {12, 10},
-        {12, 11},
-        {12, 12},
-        {12, 13},
-        {12, 14},
-        {12, 15},
-    },
-};
-
-/*
-    指示灯和显存的映射关系
-    油量格数对应的指示灯
-    对应的显存：  
-*/
-static const aip3368h_display_mapping_t fuel_lev_map[] = {
-    {12, 1}, {12, 2}, {12, 3}, {12, 4}, {12, 5}, {12, 6},
-};
-
-/*
-    指示灯和显存的映射关系
-    发动机转速边框对应的指示灯
-    对应的显存：  
-*/
-const aip3368h_display_mapping_t engine_speed_frame_map[] = {
-    {3, 0},  {3, 1},  {3, 2}, {3, 3},  {3, 4},  {3, 5},  {3, 6},
-    {3, 7},  {3, 8},  {3, 9}, {3, 10}, {3, 11}, {3, 12}, {3, 13},
-    {3, 14}, {3, 15}, {0, 8}, {0, 9},  {0, 10}, {0, 11}, {0, 12},
-};
-
-/*
-    指示灯和显存的映射关系
-    发动机转速对应的格数，从低到高
-    对应的显存：  
-*/
-static const aip3368h_display_mapping_t engine_speed_lev_map[] = {
-    {1, 0}, {1, 1}, {1, 2},  {1, 3},  {1, 4},  {1, 5},  {1, 6},  {1, 7},
-    {1, 8}, {1, 9}, {1, 10}, {1, 11}, {1, 12}, {1, 13}, {1, 14}, {1, 15},
-    {0, 0}, {0, 1}, {0, 2},  {0, 3},  {0, 4},  {0, 5},  {0, 6},  {0, 7},
-};
-
-/*
-    指示灯和显存的映射关系
-    挡位对应的指示灯（1 ~ 6挡）
-    对应的显存：  
-*/
+// 挡位：只有 1 位数码管
 const aip3368h_display_mapping_t gear_map[] = {
-    // a 段 ~ g 段
-    {4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 4}, {4, 5}, {4, 6},
+    {4, 0},
 };
 
-/*
-    指示灯和显存的映射关系
-    时速第 0 位对应的指示灯（从右往左，从0开始）
-    对应的显存：  
-*/
-static const aip3368h_display_mapping_t speed_bit_0_map[] = {
-    // a 段 ~ g 段
-    {6, 0}, {6, 1}, {6, 2}, {6, 3}, {6, 4}, {6, 5}, {6, 6},
+// 发动机转速边框灯：第 0 段 {3,0} 共 16 个，第 1 段 {0,8} 共 5 个
+const aip3368h_display_mapping_t engine_speed_frame_seg_map[] = {
+    {3, 0},
+    {0, 8},
 };
 
-/*
-    指示灯和显存的映射关系
-    时速第 1 位对应的指示灯（从右往左，从0开始）
-    对应的显存：  
-*/
-static const aip3368h_display_mapping_t speed_bit_1_map[] = {
-    // a 段 ~ g 段
-    {6, 9}, {6, 10}, {6, 11}, {6, 12}, {6, 13}, {6, 14}, {6, 15},
+// 发动机转速格数灯：第 0 段 {1,0} 共 16 个，第 1 段 {0,0} 共 8 个
+static const aip3368h_display_mapping_t engine_speed_lev_seg_map[] = {
+    {1, 0},
+    {0, 0},
 };
+
+// 油量格数灯（第 0 格红色灯之后，共 6 格，连续排列）
+#define FUEL_LEV_SEG_BUFF_INDEX ((u8)12)
+#define FUEL_LEV_SEG_BASE_BIT   ((u8)1)
+#define FUEL_LEV_NUMS           ((u8)6)
 
 /**
  * @brief 设置显存中的单个 bit（指示灯 / 数码管的某一段）
@@ -198,22 +87,41 @@ static void __aip3368h_display_set_bit__(u8 buff_index, u8 bit_offset,
 }
 
 /**
- * @brief 按段码显示一位数码管（a ~ g 段）
+ * @brief 按段码显示一位数码管
  *
- * @param map        该位数码管 a ~ g 段对应的映射表（共 7 项）
+ * @param pos         该位数码管在显存中的起点（a 段位置）
  * @param segment_code 段码，bit0=a ... bit6=g
- * @param is_display 1：显示，0：清空该位
+ * @param is_display  1：显示，0：清空该位
  */
-static void __aip3368h_display_segments__(
-    const aip3368h_display_mapping_t *map, u8 segment_code, u8 is_display)
+static void __aip3368h_display_digit__(const aip3368h_display_mapping_t *pos,
+                                       u8 segment_code, u8 is_display)
 {
     u8 i;
 
     for (i = 0; i < 7; i++) {
         __aip3368h_display_set_bit__(
-            map[i].buff_index, map[i].bit_offset,
+            pos->buff_index, (u8)(pos->bit_offset + i),
             is_display && (segment_code & (0x01 << i)));
     }
+}
+
+/**
+ * @brief 取“连续排列的灯”中第 idx 个灯在显存中的位置
+ *
+ * @param seg_map     各段起点表，每段最多 16 个灯
+ * @param idx         灯的序号，从 0 开始
+ * @param buff_index  取出的显存下标
+ * @param bit_offset  取出的位号
+ */
+static void __aip3368h_display_strip_pos__(
+    const aip3368h_display_mapping_t *seg_map, u8 idx, u8 *buff_index,
+    u8 *bit_offset)
+{
+    // 每段 16 个灯，段号 = idx / 16，段内偏移 = idx % 16
+    const aip3368h_display_mapping_t *seg = &seg_map[idx / 16];
+
+    *buff_index = seg->buff_index;
+    *bit_offset = (u8)(seg->bit_offset + (idx % 16));
 }
 
 void aip3368h_display_left_turn_light(u8 is_display)
@@ -267,21 +175,21 @@ void aip3368h_display_time_hour(u8 is_display, u8 hour)
 {
     if (is_display) {
         // 小时个位
-        __aip3368h_display_segments__(hour_bit_0_map,
-                                      digit_segment_code[hour % 10], 1);
+        __aip3368h_display_digit__(&time_digit_map[0],
+                                   digit_segment_code[hour % 10], 1);
 
         if (hour >= 10) {
             // 小时十位
-            __aip3368h_display_segments__(hour_bit_1_map,
-                                          digit_segment_code[hour / 10], 1);
+            __aip3368h_display_digit__(&time_digit_map[1],
+                                       digit_segment_code[hour / 10], 1);
         } else {
             // hour < 10，清空小时的十位显示
-            __aip3368h_display_segments__(hour_bit_1_map, 0, 0);
+            __aip3368h_display_digit__(&time_digit_map[1], 0, 0);
         }
     } else {
         // 清空小时个位、十位的显示
-        __aip3368h_display_segments__(hour_bit_0_map, 0, 0);
-        __aip3368h_display_segments__(hour_bit_1_map, 0, 0);
+        __aip3368h_display_digit__(&time_digit_map[0], 0, 0);
+        __aip3368h_display_digit__(&time_digit_map[1], 0, 0);
     }
 }
 
@@ -298,15 +206,15 @@ void aip3368h_display_time_minute(u8 is_display, u8 minute)
 {
     if (is_display) {
         // 分钟个位
-        __aip3368h_display_segments__(minute_bit_0_map,
-                                      digit_segment_code[minute % 10], 1);
+        __aip3368h_display_digit__(&time_digit_map[2],
+                                   digit_segment_code[minute % 10], 1);
         // 分钟十位
-        __aip3368h_display_segments__(minute_bit_1_map,
-                                      digit_segment_code[minute / 10], 1);
+        __aip3368h_display_digit__(&time_digit_map[3],
+                                   digit_segment_code[minute / 10], 1);
     } else {
         // 清空分钟个位、十位的显示
-        __aip3368h_display_segments__(minute_bit_0_map, 0, 0);
-        __aip3368h_display_segments__(minute_bit_1_map, 0, 0);
+        __aip3368h_display_digit__(&time_digit_map[2], 0, 0);
+        __aip3368h_display_digit__(&time_digit_map[3], 0, 0);
     }
 }
 
@@ -381,8 +289,8 @@ void aip3368h_display_mile_light(u8 is_display)
  */
 void aip3368h_display_mileage_bit_x(u8 is_display, u8 bit_x, u8 num)
 {
-    __aip3368h_display_segments__(mileage_map[bit_x], digit_segment_code[num],
-                                  is_display);
+    __aip3368h_display_digit__(&mileage_map[bit_x], digit_segment_code[num],
+                               is_display);
 }
 
 /**
@@ -419,7 +327,7 @@ void aip3368h_display_mileage(u32 mileage)
     }
 
     // 遍历里程的第 0 ~ valid_bits 位数码管(数码管从右往左排序)
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < ARRAY_SIZE(mileage_map); i++) {
         // i 从 0 开始，按位数直接判断即可；未显示位要清空对应的数码管
         if (i < valid_bits) {
             aip3368h_display_mileage_bit_x(1, i, (mileage % 10));
@@ -495,9 +403,10 @@ void aip3368h_display_fuel_lev(u8 fuel_lev)
 {
     u8 i;
 
-    for (i = 0; i < ARRAY_SIZE(fuel_lev_map); i++) {
-        __aip3368h_display_set_bit__(fuel_lev_map[i].buff_index,
-                                     fuel_lev_map[i].bit_offset, (i < fuel_lev));
+    for (i = 0; i < FUEL_LEV_NUMS; i++) {
+        __aip3368h_display_set_bit__((u8)(FUEL_LEV_SEG_BUFF_INDEX),
+                                     (u8)(FUEL_LEV_SEG_BASE_BIT + i),
+                                     (i < fuel_lev));
     }
 }
 
@@ -507,9 +416,12 @@ void aip3368h_display_fuel_lev(u8 fuel_lev)
  */
 void aip3368h_display_engine_speed_frame_by_idx(u8 is_display, u8 idx)
 {
-    __aip3368h_display_set_bit__(engine_speed_frame_map[idx].buff_index,
-                                 engine_speed_frame_map[idx].bit_offset,
-                                 is_display);
+    u8 buff_index;
+    u8 bit_offset;
+
+    __aip3368h_display_strip_pos__(engine_speed_frame_seg_map, idx, &buff_index,
+                                   &bit_offset);
+    __aip3368h_display_set_bit__(buff_index, bit_offset, is_display);
 }
 
 /**
@@ -525,10 +437,13 @@ void aip3368h_display_engine_speed_frame_by_idx(u8 is_display, u8 idx)
 void aip3368h_display_engine_speed_lev(u16 engine_speed_lev)
 {
     u8 i;
+    u8 buff_index;
+    u8 bit_offset;
 
-    for (i = 0; i < ARRAY_SIZE(engine_speed_lev_map); i++) {
-        __aip3368h_display_set_bit__(engine_speed_lev_map[i].buff_index,
-                                     engine_speed_lev_map[i].bit_offset,
+    for (i = 0; i < AIP3368H_DISPLAY_ENGINE_SPEED_LEV_NUMS; i++) {
+        __aip3368h_display_strip_pos__(engine_speed_lev_seg_map, i, &buff_index,
+                                       &bit_offset);
+        __aip3368h_display_set_bit__(buff_index, bit_offset,
                                      (i < engine_speed_lev));
     }
 }
@@ -554,12 +469,12 @@ void aip3368h_display_gear(u8 gear)
 {
     aip3368h_display_gear_n_light(0);
     // 清空挡位对应的 a ~ g 段
-    __aip3368h_display_segments__(gear_map, 0, 0);
+    __aip3368h_display_digit__(&gear_map[0], 0, 0);
 
     if (0 == gear) {
         aip3368h_display_gear_n_light(1);
     } else if (gear <= 6) {
-        __aip3368h_display_segments__(gear_map, digit_segment_code[gear], 1);
+        __aip3368h_display_digit__(&gear_map[0], digit_segment_code[gear], 1);
     }
 }
 
@@ -587,31 +502,16 @@ void aip3368h_display_kmh_light(u8 is_display)
  */
 void aip3368h_display_speed_bit(u8 is_display, u8 bit_index, u8 bit_value)
 {
-    const aip3368h_display_mapping_t *buf_ptr;
-    u8 segment_code = 0;
-
     if (bit_index < 2) {
-        // 第 0 位、第 1 位才使用到段码
-        segment_code = digit_segment_code[bit_value];
-    }
-
-    switch (bit_index) {
-    case 0:
-        buf_ptr = speed_bit_0_map;
-        break;
-    case 1:
-        buf_ptr = speed_bit_1_map;
-        break;
-    case 2:
-        // 百位只有 b 段和 c 段数码管
-        __aip3368h_display_set_bit__(5, 2, is_display);
-        __aip3368h_display_set_bit__(5, 3, is_display);
-        return;
-    default:
+        // 第 0 位、第 1 位使用段码
+        __aip3368h_display_digit__(&speed_digit_map[bit_index],
+                                   digit_segment_code[bit_value], is_display);
         return;
     }
 
-    __aip3368h_display_segments__(buf_ptr, segment_code, is_display);
+    // 百位只有 b 段和 c 段数码管，不使用段码
+    __aip3368h_display_set_bit__(5, 2, is_display);
+    __aip3368h_display_set_bit__(5, 3, is_display);
 }
 
 /**
@@ -775,7 +675,7 @@ void test_aip3368h_display_engine_speed_lev_1ms_isr(void)
 
     aip3368h_display_engine_speed_lev( lev);
     lev++;
-    if (lev >= ARRAY_SIZE(engine_speed_lev_map) + 1) {
+    if (lev >= AIP3368H_DISPLAY_ENGINE_SPEED_LEV_NUMS + 1) {
         lev = 0;
     }
 }
@@ -795,8 +695,8 @@ void test_aip3368h_display_engine_speed_frame_1ms_isr(void)
     aip3368h_display_engine_speed_frame_by_idx(!dir, idx);
     if (0 == dir) {
         idx++;
-        if (idx >= ARRAY_SIZE(engine_speed_frame_map)) {
-            idx = ARRAY_SIZE(engine_speed_frame_map) - 1;
+        if (idx >= AIP3368H_DISPLAY_ENGINE_SPEED_FRAME_NUMS) {
+            idx = AIP3368H_DISPLAY_ENGINE_SPEED_FRAME_NUMS - 1;
             dir = 1;
         }
     } else {
@@ -834,7 +734,7 @@ void test_aip3368h_display_engine_speed_frame_wave_1ms_isr(void)
     cnt = 0;
 
     // 清空当前所有发动机转速边框灯
-    for (i = 0; i < ARRAY_SIZE(engine_speed_frame_map); i++) {
+    for (i = 0; i < AIP3368H_DISPLAY_ENGINE_SPEED_FRAME_NUMS; i++) {
         aip3368h_display_engine_speed_frame_by_idx(0, i);
     }
 
@@ -901,7 +801,7 @@ void test_aip3368h_display_fuel_lev_1ms_isr(void)
         cnt = 0;
         aip3368h_display_fuel_lev(fuel_lev);
         fuel_lev++;
-        if (fuel_lev >= ARRAY_SIZE(fuel_lev_map) + 1) {
+        if (fuel_lev >= FUEL_LEV_NUMS + 1) {
             fuel_lev = 0;
         }
     }

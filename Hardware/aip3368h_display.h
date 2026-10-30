@@ -12,12 +12,14 @@
 #define AIP3368H_DISPLAY_BUF_CLR(idx, bit_offset)                              \
     (aip3368h_display_buff[(idx)] &= ~(0x01 << (bit_offset)))
 
-// 用于建立指示灯和显存的映射关系：
+// 用于建立数码管 / 指示灯和显存的映射关系：
 typedef struct
 {
     // display_buff[] 中对应元素索引
     u8 buff_index;
     // display_buff[] 中对应元素中的第 x 位（按二进制数的排列方式，从右往左数）
+    // 数码管：该位 a 段所在的位（b 段 = bit_offset + 1 ... g 段 = bit_offset + 6）
+    // 连续段的灯：该段第 0 个灯所在的位
     u8 bit_offset;
 } aip3368h_display_mapping_t;
 
@@ -34,8 +36,13 @@ enum
 };
 typedef u8 seg_idx_t;
 
-extern const aip3368h_display_mapping_t gear_map[7];
-extern const aip3368h_display_mapping_t engine_speed_frame_map[21];
+extern const aip3368h_display_mapping_t gear_map[1];
+extern const aip3368h_display_mapping_t engine_speed_frame_seg_map[2];
+
+// 发动机转速边框灯的个数（分 2 段，每段最多 16 个）
+#define AIP3368H_DISPLAY_ENGINE_SPEED_FRAME_NUMS (21)
+// 发动机转速格数灯的最大格数（分 2 段，每段最多 16 个）
+#define AIP3368H_DISPLAY_ENGINE_SPEED_LEV_NUMS   (24)
 
 void aip3368h_display_left_turn_light(u8 is_display);
 void aip3368h_display_right_turn_light(u8 is_display);

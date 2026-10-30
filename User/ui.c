@@ -95,8 +95,8 @@ void ui_display_err_handle(void)
             // 清除挡位显示，防止显示残留
             aip3368h_display_gear(GEAR_UNKNOWN);
         } else {
-            AIP3368H_DISPLAY_BUF_SET(gear_map[SEG_IDX_G].buff_index,
-                                     gear_map[SEG_IDX_G].bit_offset);
+            AIP3368H_DISPLAY_BUF_SET(gear_map[0].buff_index,
+                                     gear_map[0].bit_offset + SEG_IDX_G);
         }
     }
 
