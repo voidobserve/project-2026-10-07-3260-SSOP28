@@ -423,6 +423,7 @@ void ui_process_fuel_lev(void)
     } else {
         // 关闭低油量报警
         instrument.flag_fuel_low = 0;
+        aip3368h_display_fuel_icon_light(0); // 正常显示油量时，不显示油量图标
         // 正常显示油量
         aip3368h_display_fuel_lev(fuel_lev_to_display);
     }

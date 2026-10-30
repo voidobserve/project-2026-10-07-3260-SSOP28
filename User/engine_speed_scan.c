@@ -2,133 +2,108 @@
 
 #include "include.h"
 #include "instrument.h"
+#include "tmr2.h" // 毫秒墙钟时间基准
 #include "user_config.h"
 
 #if ENGINE_SPEED_SCAN_ENABLE
 
-volatile u32 engine_speed_scan_cnt; // 当前采样窗口内累计的发动机脉冲数
-volatile u16 engine_speed_scan_ms;  // 当前采样窗口已计时长度，单位：ms
+#define CONVER_ONE_MINUTE_TO_MS (60000UL) // 将 min 转换成以 ms 为单位的数据
 
-// 已完成但尚未处理的窗口脉冲总数
-static volatile u32 pending_engine_speed_scan_cnt;
-// 待处理完整窗口的累计时长，单位：ms
-static volatile u32 pending_engine_speed_scan_ms;
-// 距离上次脉冲的时间，单位：ms
-static volatile u16 engine_speed_no_pulse_ms;
-// 超时已触发，等待新脉冲后解除
-static volatile bit engine_speed_timeout_latched;
+/*
+ * 发动机转速脉冲采集：TMR0 外部脉冲计数模式（CAP PIN 上升沿计数，FIN_S0 <- P24）。
+ *   脉冲由硬件计数：LED 波形发送关中断期间照常累计，不丢脉冲；
+ *   窗口时间取毫秒墙钟：与脉冲口径一致（都是墙钟），转速换算无偏；
+ *   窗口到齐才更新 instrument.engine_speed，新数据到来前保持显示。
+ */
+static u32 pulse_cnt = 0;    // 当前窗口内累计的脉冲数
+static u32 win_ms = 0;       // 当前窗口已累计的时长（ms）
+static u32 no_pulse_ms = 0;  // 距上次脉冲经过的时间（ms）
+static u16 hw_cnt_last = 0;  // 上次读取的硬件脉冲计数值
+static u32 last_ms = 0;      // 上次结算时的毫秒时间戳（ms）
+static bit timeout_latch = 0; // 超时锁存：已触发过，等新脉冲到来才解除
+static bit timeout_flag = 0;  // 超时事件标志：结算时消费
 
-volatile bit flag_is_engine_speed_scan_over_time; // 等待主循环处理的超时事件
-
-// 发动机转速的相关配置
+/**
+ * @brief 发动机转速扫描的配置：P24 输入 + TMR0 外部脉冲计数
+ */
 void engine_speed_scan_config(void)
 {
     P2_MD1 &= ~GPIO_P24_MODE_SEL(0x3); // 输入模式
+
+    // TMR0：外部脉冲计数（CAP PIN 上升沿），硬件累计，无需中断
+    FIN_S0 = GPIO_FIN_SEL_P24;
+    TMR_ALLCON = TMR0_CNT_CLR(0x1);    // 清除计数值
+    TMR0_PRH = TMR_PERIOD_VAL_H(0xFF); // 周期值最大，自由回绕（差值累计安全）
+    TMR0_PRL = TMR_PERIOD_VAL_L(0xFF);
+    TMR0_CONH = 0x0;                   // 无中断
+    TMR0_CONL = TMR_SOURCE_SEL(0x0) |  // 计数源：GPIO（CAP PIN）上升沿
+                TMR_PRESCALE_SEL(0x0) |
+                TMR_MODE_SEL(0x01);    // 计数器模式
 }
 
-void engine_speed_scan_timer_50us_isr(void)
-{
-    // 记录上一次检测到的引脚电平（发送机转速检测脚）
-    static volatile bit last_engine_speed_scan_level = 0;
-    // 记录发动机转速扫描的时间
-    static u8 cnt = 0;
-
-    cnt++;
-    if (cnt >= 20) // 每1ms进入一次
-    {
-        cnt = 0;
-        engine_speed_scan_ms++;
-
-        if (engine_speed_no_pulse_ms < ENGINE_SPEED_SCAN_OVER_TIME) {
-            engine_speed_no_pulse_ms++;
-            if (engine_speed_no_pulse_ms >= ENGINE_SPEED_SCAN_OVER_TIME &&
-                engine_speed_timeout_latched == 0) {
-                engine_speed_timeout_latched = 1;
-                flag_is_engine_speed_scan_over_time = 1;
-            }
-        }
-
-        if (engine_speed_scan_ms >= ENGINE_SPEED_SCAN_UPDATE_TIME) {
-            pending_engine_speed_scan_cnt += engine_speed_scan_cnt;
-            engine_speed_scan_cnt = 0;
-            pending_engine_speed_scan_ms += ENGINE_SPEED_SCAN_UPDATE_TIME;
-            engine_speed_scan_ms = 0;
-        }
-    }
-
-    if (ENGINE_SPEED_SCAN_PIN) // 检测发动机转速的引脚
-    {
-        if (0 == last_engine_speed_scan_level) {
-            // 如果之前检测到低电平，现在检测到高电平，说明有上升沿，对脉冲计数加一
-            engine_speed_scan_cnt++;
-            engine_speed_no_pulse_ms = 0;
-            engine_speed_timeout_latched = 0;
-            flag_is_engine_speed_scan_over_time = 0;
-        }
-
-        last_engine_speed_scan_level = 1;
-    } else {
-        // 如果现在检测到低电平
-        last_engine_speed_scan_level = 0;
-    }
-}
-
-// 发动机转速扫描
+/**
+ * @brief 发动机转速扫描：主循环轮询硬件脉冲计数与毫秒时间，窗口到齐结算
+ */
 void engine_speed_scan(void)
 {
-#define CONVER_ONE_MINUTE_TO_MS (60000UL) // 将1min转换成以ms为单位的数据
+    u16 hw_cnt;    // 当前硬件脉冲计数值
+    u16 pulse_add; // 本次读取新增的脉冲数
+    u32 now_ms;    // 当前毫秒时间戳
+    u32 dt_ms;     // 距上次读取经过的时间（ms）
     u32 rpm = 0;
-    u32 scan_pulse_snapshot = 0; // 本次消费的窗口脉冲总数
-    u32 scan_time_snapshot = 0;  // 本次消费的窗口总时长，单位：ms
-    u8 scan_due = 0;             // 是否有完整窗口或待处理超时事件
-    u8 is_scan_over_time = 0;    // 本次快照是否包含超时事件
 
-    SYS_ENTER_CRITICAL_SECTION();
-    if (pending_engine_speed_scan_ms != 0 ||
-        flag_is_engine_speed_scan_over_time) {
-        scan_pulse_snapshot = pending_engine_speed_scan_cnt;
-        scan_time_snapshot = pending_engine_speed_scan_ms;
-        is_scan_over_time = flag_is_engine_speed_scan_over_time;
+    hw_cnt = (u16)(((u16)TMR0_CNTH << 8) | TMR0_CNTL);
+    pulse_add = (u16)(hw_cnt - hw_cnt_last); // 16 位回绕安全
+    hw_cnt_last = hw_cnt;
 
-        pending_engine_speed_scan_cnt = 0;
-        pending_engine_speed_scan_ms = 0;
-        flag_is_engine_speed_scan_over_time = 0;
-        scan_due = 1;
+    now_ms = tmr2_ms_get();
+    dt_ms = now_ms - last_ms;
+    last_ms = now_ms;
+    win_ms += dt_ms;
+
+    if (pulse_add != 0) {
+        pulse_cnt += pulse_add;
+        no_pulse_ms = 0;
+        timeout_latch = 0;
+        timeout_flag = 0;
+    } else {
+        if (no_pulse_ms < ENGINE_SPEED_SCAN_OVER_TIME) {
+            no_pulse_ms += dt_ms;
+            if (no_pulse_ms >= ENGINE_SPEED_SCAN_OVER_TIME &&
+                timeout_latch == 0) {
+                timeout_latch = 1; // 超时锁存，等新脉冲到来才解除
+                timeout_flag = 1;
+            }
+        }
     }
-    SYS_EXIT_CRITICAL_SECTION();
 
-    if (scan_due == 0) {
+    // 窗口未到且无超时事件：保持显示，继续累计
+    if (win_ms < ENGINE_SPEED_SCAN_UPDATE_TIME && timeout_flag == 0) {
         return;
     }
 
-#if USER_DEBUG_ENABLE
-    // printf("engine speed scan time:%lu\n", scan_time_snapshot);
-#endif
-
-    if (is_scan_over_time) {
+    if (timeout_flag) {
         rpm = 0;
-    } else if (scan_time_snapshot != 0) {
+        timeout_flag = 0;
+    } else {
         /*
             窗口内转过的圈数 = 单脉冲对应的圈数 * 窗口脉冲数
             每分钟转数 = 窗口内转过的圈数 / 窗口时长 * 60000ms(60000ms == 1min)
         */
-        rpm = scan_pulse_snapshot * ENGINE_SPEED_SCAN_A_PULSE_PER_TURNS *
+        rpm = pulse_cnt * ENGINE_SPEED_SCAN_A_PULSE_PER_TURNS *
               (CONVER_ONE_MINUTE_TO_MS / ENGINE_SPEED_SCAN_COMPONSATION) /
-              scan_time_snapshot;
+              win_ms;
     }
-#if USER_DEBUG_ENABLE
-    // printf("engine speed pulse cnt:%lu\n", scan_pulse_snapshot);
-#endif
 
-    // 限制得到的发动机转速，避免写入仪表数据时超出16位范围
+    // 限制得到的发动机转速，避免写入仪表数据时超出 16 位范围
     if (rpm >= 65535) {
         rpm = 65535;
     }
 
+    pulse_cnt = 0;
+    win_ms = 0;
+
     instrument.engine_speed = rpm;
-#if USER_DEBUG_ENABLE
-    // printf("cur rpm %lu\n", rpm);
-#endif
 }
 
 #endif // #if ENGINE_SPEED_SCAN_ENABLE

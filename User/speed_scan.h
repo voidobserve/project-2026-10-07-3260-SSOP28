@@ -35,10 +35,8 @@
 #define SPEED_SCAN_UPDATE_TIME (500)
 // #define SPEED_SCAN_UPDATE_TIME (400) // 时间太短，时速会经常跳动（提供1Hz信号，会在0km/h、3km/h这两个值来回切换）
 
-void speed_scan_timer_50us_isr(void);
-
-void speed_scan_config(void);
-void speed_scan(void);
+void speed_scan_config(void); // 时速扫描的配置（P01 输入 + TMR3 外部脉冲计数）
+void speed_scan(void);        // 时速扫描（主循环轮询硬件计数与墙钟，窗口到齐结算）
 #endif
 
 #endif

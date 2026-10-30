@@ -12,6 +12,7 @@
 #include "eeprom_24cxx.h"
 #include "ui_process.h"
 #include "ui.h"
+#include "tmr2.h"
 #include "led_anim.h"
 
 #if USER_DEBUG_ENABLE
@@ -92,6 +93,8 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
         instrument_info_save_time_add();
 
         ui_process_boot_anim_timer_isr();
+
+        tmr2_ms_update(); // 毫秒墙钟时间基准累计（TMR2 自由计数回绕安全）
 
 #if LED_ANIM_ENABLE
         led_anim_timer_1ms_isr(); // 幻彩灯动画 1ms 计数

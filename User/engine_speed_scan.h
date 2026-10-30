@@ -26,9 +26,8 @@
 */
 #define ENGINE_SPEED_SCAN_OVER_TIME (600)
 
-void engine_speed_scan_timer_50us_isr(void);
-void engine_speed_scan_config(void); // 发动机转速扫描的配置
-void engine_speed_scan(void);        // 发动机转速扫描
+void engine_speed_scan_config(void); // 发动机转速扫描的配置（P24 输入 + TMR0 外部脉冲计数）
+void engine_speed_scan(void);        // 发动机转速扫描（主循环轮询硬件计数与墙钟，窗口到齐结算）
 
 #endif
 

@@ -12,7 +12,7 @@
 // ui 刷新 油量挡位 的周期，单位：ms
 #define UI_RPOCESS_FUEL_LEVEL_PERIOD ((u16)5000)
 // 如果油量接近，刷新 油量挡位 的周期，单位：ms
-#define UI_RPOCESS_FUEL_LEVEL_WHEN_CLOSE_PERIOD ((u16)20000)
+#define UI_RPOCESS_FUEL_LEVEL_WHEN_CLOSE_PERIOD ((u16)5000)
 
 // 油量挡位(包括低油量提示的挡位)
 #define FUEL_LEVEL_MAX (6)
