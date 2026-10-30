@@ -10,7 +10,7 @@
 #include "user_config.h"
 
 // ui管理结构体
-volatile ui_manager_t ui_manager = {0};
+volatile ui_manager_t ui_manager;
 
 void ui_manager_init(void)
 {

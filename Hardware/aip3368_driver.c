@@ -4,8 +4,8 @@
 #include "user_config.h" // USER_DEBUG_ENABLE
 
 // REVIEW 测试时使用 u16 , 实际使用可以改为 u8
-static volatile u8 aip3368h_refresh_cnt = 0;
-// static volatile u16 aip3368h_refresh_cnt = 0;
+static volatile u8 aip3368h_refresh_cnt;
+// static volatile u16 aip3368h_refresh_cnt ;
 
 // 显存
 volatile u16 aip3368h_display_buff[AIP3368H_IC_NUM];

@@ -42,8 +42,9 @@
 #include "fuel_capacity.h"
 #include "ui_process.h"
 #include "ui.h"
+#include "led_anim.h"
 
-static volatile u8 irq_was_enabled = 0;
+static volatile u8 irq_was_enabled;
 void sys_enter_critical_section(void)
 {
     irq_was_enabled = IE_EA;
@@ -109,6 +110,10 @@ void user_init(void)
     P1_MD0 |= GPIO_P10_MODE_SEL(0x01);  // 输出模式
     FOUT_S10 = GPIO_FOUT_AF_FUNC;
     P10 = 1; // 使能led供电
+
+#if LED_ANIM_ENABLE
+    led_anim_config(); // 幻彩灯动画：上电直接按车速运行（无开机动画）
+#endif
 
     aip3368h_module_init();
 
@@ -196,6 +201,10 @@ void main(void)
         instrument_info_save_handle();
 
         ui_display_handle();
+
+#if LED_ANIM_ENABLE
+        led_anim_handle(); // 幻彩灯动画帧调度与发送
+#endif
 
 // TEST ONLY
 #if AIP1302_TEST_ENABLE

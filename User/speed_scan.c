@@ -8,15 +8,15 @@
 
 // 速度检测是否一直没有脉冲到来，导致超时
 // 等待主循环处理的超时事件
-static volatile bit flag_is_speed_scan_over_time = 0;
+static volatile bit flag_is_speed_scan_over_time;
 // 超时已触发，等待检测到新脉冲后解除
-static volatile bit speed_scan_timeout_latched = 0;
-static volatile u32 speed_pulse_cnt = 0; // 当前窗口内累计的脉冲数
+static volatile bit speed_scan_timeout_latched;
+static volatile u32 speed_pulse_cnt; // 当前窗口内累计的脉冲数
 // 已完成但尚未处理的窗口脉冲总数
-static volatile u32 speed_pending_pulse_cnt = 0;
-static volatile u32 speed_pending_time_ms = 0; // 待处理窗口的累计时长，单位：ms
-static volatile u16 speed_scan_time_ms = 0;    // 当前窗口已计时长度，单位：ms
-static volatile u16 speed_no_pulse_time_ms = 0; // 距离上次脉冲的时间，单位：ms
+static volatile u32 speed_pending_pulse_cnt;
+static volatile u32 speed_pending_time_ms;  // 待处理窗口的累计时长，单位：ms
+static volatile u16 speed_scan_time_ms;     // 当前窗口已计时长度，单位：ms
+static volatile u16 speed_no_pulse_time_ms; // 距离上次脉冲的时间，单位：ms
 
 #if 0
 // 滑动平局数组

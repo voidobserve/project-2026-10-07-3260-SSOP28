@@ -16,16 +16,16 @@
 // 不写显式初值：STARTUP.A51 启动时会把 XDATA 整片清零，
 // 显式 = {0} 反而会在代码区生成一份初值镜像
 static volatile u8 speed_filter_array[SPEED_FILTER_ARRAY_SIZE];
-static volatile u8 speed_filter_index = 0;
+static volatile u8 speed_filter_index;
 
 // ui处理时速显示的周期
-static volatile u8 ui_process_speed_period = 0;
+static volatile u8 ui_process_speed_period;
 // ui处理发动机转速边框动画的周期
-static volatile u8 ui_process_engine_speed_frame_wave_period = 0;
+static volatile u8 ui_process_engine_speed_frame_wave_period;
 // ui处理发动机转速的周期计数器
-static volatile u8 ui_process_engine_speed_period = 0;
+static volatile u8 ui_process_engine_speed_period;
 // ui处理 油量 显示的周期
-static volatile u16 ui_process_fuel_lev_period = 0;
+static volatile u16 ui_process_fuel_lev_period;
 
 static void speed_filter_init(u8 speed)
 {
@@ -219,8 +219,8 @@ static void engine_speed_frame_wave_show_spread(s8 spread)
  */
 void ui_process_engine_speed_frame_wave(void)
 {
-    static s8 dir = 0;     // 0：向两侧扩散，1：向中间回收
-    static s8 spread = -1; // -1：中间三个灯，0..8：向两侧扩散/回收
+    static s8 dir = 0;       // 0：向两侧扩散，1：向中间回收
+    static s8 spread = -1;   // -1：中间三个灯，0..8：向两侧扩散/回收
     const s8 max_spread = 8; // 扩散到边界位置
     u8 i;
 
@@ -440,7 +440,7 @@ void ui_process_mileage(void)
     u32 display_mileage;
     u32 total_mileage;
     u8 display_total_mileage; // 是否显示总里程(ODO)
-    u8 display_decimal; // 是否显示小数
+    u8 display_decimal;       // 是否显示小数
 
     display_total_mileage = instrument.is_display_total_mileage;
     if (display_total_mileage) {
@@ -499,7 +499,7 @@ void ui_process_boot_anim(void)
             // ui_process_boot_anim_cnt = 0; // 可以不用清零，后续不再使用
 
             // 有些使用不到的指示灯，需要熄灭
-            aip3368h_display_abs_light(0); 
+            aip3368h_display_abs_light(0);
             break;
         }
 

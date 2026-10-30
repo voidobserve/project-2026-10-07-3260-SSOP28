@@ -439,6 +439,16 @@
               <FileType>1</FileType>
               <FilePath>..\..\Hardware\aip3368h_display.c</FilePath>
             </File>
+            <File>
+              <FileName>led_anim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Hardware\led_anim.c</FilePath>
+            </File>
+            <File>
+              <FileName>led_strip.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\Hardware\led_strip.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

@@ -9,21 +9,21 @@
 volatile instrument_t instrument;
 
 // 是否开始写入数据的时间计数
-static volatile u8 instrument_info_save_time_add_enable = 0;
+static volatile u8 instrument_info_save_time_add_enable;
 // 写入数据的时间计数
-static volatile u16 instrument_info_save_time_cnt = 0;
+static volatile u16 instrument_info_save_time_cnt;
 // 写入时间到来，执行写入操作
-static volatile u8 instrument_info_save_time_arrive = 0;
+static volatile u8 instrument_info_save_time_arrive;
 
 // 环形日志：下一次写入的槽位编号，上电时由 instrument_info_init() 从 EEPROM 里恢复
-static u8 instrument_info_next_slot = 0;
+static u8 instrument_info_next_slot;
 
 // 上一次成功写入的槽位、以及当时写进去的里程：
 // 里程没变、只有显示模式变了时，原地重写这一槽，避免日志里出现两条
 // 里程相同、显示模式不同的记录（上电扫描时无法判断哪一条更新）
-static u8 instrument_info_last_slot = 0;
-static u32 instrument_info_last_total = 0;
-static u32 instrument_info_last_subtotal = 0;
+static u8 instrument_info_last_slot;
+static u32 instrument_info_last_total;
+static u32 instrument_info_last_subtotal;
 
 // 一条记录的打包缓冲（写入 EEPROM 用）
 static u8 instrument_info_rec[INSTRUMENT_EEPROM_REC_SIZE];

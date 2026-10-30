@@ -4,12 +4,12 @@
 
 #if FUEL_CAPACITY_SCAN_ENABLE
 
-static volatile u8 fuel_capacity_scan_time_cnt = 0;
+static volatile u8 fuel_capacity_scan_time_cnt;
 
 // 油量ad值的滑动平均：
 #define SAMPLE_COUNT 20 // 样本计数
 static volatile u16 fuel_capacity_adc_val_samples[SAMPLE_COUNT];
-static volatile u8 fuel_capacity_adc_val_sample_index = 0;
+static volatile u8 fuel_capacity_adc_val_sample_index;
 
 static void __fuel_capacity_adc_val_samples_init__(u16 adc_val)
 {

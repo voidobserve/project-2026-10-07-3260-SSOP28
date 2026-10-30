@@ -9,12 +9,12 @@
 volatile u32 distance;
 
 // TMR1 中断累加的 1ms 计数（生产者），在 mileage_scan() 里被取走并清零（消费者）
-volatile u16 mileage_time_1ms_cnt = 0;
+volatile u16 mileage_time_1ms_cnt;
 
 // 距离上一次保存经过的时间（单位：ms），主循环自己维护，不会被中断修改
-static u16 mileage_save_time_ms = 0;
+static u16 mileage_save_time_ms;
 // 车速为 0 持续的时间（单位：ms），主循环自己维护，不会被中断修改
-static u16 mileage_stop_time_ms = 0;
+static u16 mileage_stop_time_ms;
 
 /**
  * @brief 取走并清零中断里累加的 1ms 计数（生产者-消费者）

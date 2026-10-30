@@ -12,6 +12,7 @@
 #include "eeprom_24cxx.h"
 #include "ui_process.h"
 #include "ui.h"
+#include "led_anim.h"
 
 #if USER_DEBUG_ENABLE
 // #include "aip1302.h" // TEST ONLY
@@ -91,6 +92,10 @@ void TIMR1_IRQHandler(void) interrupt TMR1_IRQn
         instrument_info_save_time_add();
 
         ui_process_boot_anim_timer_isr();
+
+#if LED_ANIM_ENABLE
+        led_anim_timer_1ms_isr(); // 幻彩灯动画 1ms 计数
+#endif
 
 #if AIP3368H_DISPLAY_TEST_ENABLE
         test_aip3368h_display_light_1ms_isr();

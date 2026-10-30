@@ -6,9 +6,9 @@
 volatile aip1302_info_t aip1302_info;
 
 // 更新时间计数，控制更新时间
-volatile u16 aip1302_update_info_cnt = 0;
+volatile u16 aip1302_update_info_cnt;
 // 更新时间到来标志位
-volatile bit flag_is_update_aip1302_info = 0;
+volatile bit flag_is_update_aip1302_info;
 
 static u8 aip1302_is_working(void); // 函数声明
 

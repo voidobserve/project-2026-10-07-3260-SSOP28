@@ -6,20 +6,19 @@
 
 #if ENGINE_SPEED_SCAN_ENABLE
 
-volatile u32 engine_speed_scan_cnt = 0; // 当前采样窗口内累计的发动机脉冲数
-volatile u16 engine_speed_scan_ms = 0;  // 当前采样窗口已计时长度，单位：ms
+volatile u32 engine_speed_scan_cnt; // 当前采样窗口内累计的发动机脉冲数
+volatile u16 engine_speed_scan_ms;  // 当前采样窗口已计时长度，单位：ms
 
 // 已完成但尚未处理的窗口脉冲总数
-static volatile u32 pending_engine_speed_scan_cnt = 0;
+static volatile u32 pending_engine_speed_scan_cnt;
 // 待处理完整窗口的累计时长，单位：ms
-static volatile u32 pending_engine_speed_scan_ms = 0;
+static volatile u32 pending_engine_speed_scan_ms;
 // 距离上次脉冲的时间，单位：ms
-static volatile u16 engine_speed_no_pulse_ms = 0;
+static volatile u16 engine_speed_no_pulse_ms;
 // 超时已触发，等待新脉冲后解除
-static volatile bit engine_speed_timeout_latched = 0;
+static volatile bit engine_speed_timeout_latched;
 
-volatile bit flag_is_engine_speed_scan_over_time =
-    0; // 等待主循环处理的超时事件
+volatile bit flag_is_engine_speed_scan_over_time; // 等待主循环处理的超时事件
 
 // 发动机转速的相关配置
 void engine_speed_scan_config(void)

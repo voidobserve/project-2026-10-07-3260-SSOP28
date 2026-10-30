@@ -17,6 +17,8 @@
 
 #define PIN_LEVEL_SCAN_ENABLE 1 // 是否使能引脚电平检测功能
 
+#define LED_ANIM_ENABLE 1 // 是否使能幻彩灯动画功能
+
 #define SYS_ENTER_CRITICAL_SECTION() sys_enter_critical_section()
 #define SYS_EXIT_CRITICAL_SECTION()  sys_exit_critical_section()
 
