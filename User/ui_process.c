@@ -338,24 +338,47 @@ void ui_process_fuel_lev_period_add(void)
     }
 }
 
-static u8 fuel_percent_to_lev(u8 fuel_percent)
+// 挡位 lev 的百分比上界（lev = 0 ~ 4）：与 FUEL_LEV_x 的定义保持一致
+static u8 fuel_lev_upper(u8 lev)
 {
-    u8 ret = 0;
-    if (fuel_percent <= FUEL_LEV_0 || (fuel_percent == 0xFF)) {
-        ret = 0;
-    } else if (fuel_percent <= FUEL_LEV_1) {
-        ret = 1;
-    } else if (fuel_percent <= FUEL_LEV_2) {
-        ret = 2;
-    } else if (fuel_percent <= FUEL_LEV_3) {
-        ret = 3;
-    } else if (fuel_percent <= FUEL_LEV_4) {
-        ret = 4;
-    } else {
-        ret = 5;
+    return (u8)((u16)(lev + 1) * 100 / FUEL_LEVEL_MAX);
+}
+
+/**
+ * @brief 油量百分比 -> 油量挡位
+ * @param fuel_percent 油量百分比
+ * @param last_lev 上一次显示的挡位；FUEL_LEV_UNKNOWN 表示没有历史值（上电首次检测）
+ * @note 带 FUEL_LEV_HYST 回差：升档要越过 (边界 + 回差)，降档要落回 (边界 - 回差)，
+ *       避免读数压在档位边界时格数来回跳
+ */
+static u8 fuel_percent_to_lev(u8 fuel_percent, u8 last_lev)
+{
+    u8 lev = last_lev;
+
+    // 没有接油量：按没有油量显示
+    if (fuel_percent == FUEL_PERCENT_NO_SENSOR) {
+        return 0;
     }
 
-    return ret;
+    // 上电首次检测没有历史挡位，直接按边界取档
+    if (lev == FUEL_LEV_UNKNOWN) {
+        lev = 0;
+        while (lev < FUEL_LEVEL_MAX - 1 && fuel_percent > fuel_lev_upper(lev)) {
+            lev++;
+        }
+        return lev;
+    }
+
+    while (lev < FUEL_LEVEL_MAX - 1 &&
+           fuel_percent > (u8)(fuel_lev_upper(lev) + FUEL_LEV_HYST)) {
+        lev++; // 升档
+    }
+    while (lev > 0 &&
+           (u8)(fuel_percent + FUEL_LEV_HYST) <= fuel_lev_upper((u8)(lev - 1))) {
+        lev--; // 降档
+    }
+
+    return lev;
 }
 
 /**
@@ -378,13 +401,21 @@ static void fuel_lev_show(u8 fuel_lev)
  */
 static void fuel_state_update(u8 fuel_lev)
 {
+    u8 empty_th = FUEL_LEV_EMPTY_TH; // 几乎没有油量的阈值
+
     if (fuel_lev != 0) {
         instrument.fuel_state = FUEL_STATE_NORMAL;
         return;
     }
+
+    // 已经进入“几乎没有油量”状态时抬高阈值：油量明显回升才退出，避免油桶/红灯来回闪
+    if (instrument.fuel_state == FUEL_STATE_EMPTY) {
+        empty_th = (u8)(FUEL_LEV_EMPTY_TH + FUEL_LEV_HYST);
+    }
+
     // 挡位为 0：几乎没有油量(<=5%)、没有接油量(0xFF) 或 低油量
     if (instrument.fuel_percent == FUEL_PERCENT_NO_SENSOR ||
-        instrument.fuel_percent <= FUEL_LEV_EMPTY_TH) {
+        instrument.fuel_percent <= empty_th) {
         instrument.fuel_state = FUEL_STATE_EMPTY;
     } else {
         instrument.fuel_state = FUEL_STATE_LOW;
@@ -409,14 +440,14 @@ void ui_process_fuel_lev(void)
             return; // 还没有第一次检测值，继续等待
         }
         is_initialized = 1;
-        cur_fuel_lev = fuel_percent_to_lev(instrument.fuel_percent);
+        cur_fuel_lev = fuel_percent_to_lev(instrument.fuel_percent, FUEL_LEV_UNKNOWN);
         fuel_lev_to_display = cur_fuel_lev;
         fuel_lev_show(fuel_lev_to_display);
         fuel_state_update(fuel_lev_to_display);
         return;
     }
 
-    cur_fuel_lev = fuel_percent_to_lev(instrument.fuel_percent);
+    cur_fuel_lev = fuel_percent_to_lev(instrument.fuel_percent, fuel_lev_to_display);
     if (cur_fuel_lev != fuel_lev_to_display) {
         if (cur_fuel_lev > fuel_lev_to_display) {
             fuel_lev_diff = cur_fuel_lev - fuel_lev_to_display;

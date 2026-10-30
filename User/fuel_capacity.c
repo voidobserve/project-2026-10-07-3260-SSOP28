@@ -94,23 +94,25 @@ u16 __fuel_voltage_samples_get__(void)
 /**
  * @brief 将油量检测点的电压转换成对应的百分比值
  * 
- * @param voltage 
- * @return u8 
+ * @note 先在“传感器等效下拉电阻”上线性插值，再换算成百分比：
+ *       V(R) 是凸函数，直接在电压上插值会把中段油量少报约 10 个百分点
+ * @param voltage 检测点电压，单位：mV
+ * @return u8 0 ~ 100
  */
 u8 fuel_convert_voltage_to_percent(u16 voltage)
 {
-    u8 percent;
+    u32 r_x10; // 检测点到地的等效下拉电阻，单位：0.1Ω
+
     if (voltage <= FUEL_FULL_VOLTAGE) {
-        percent = 100;
-    } else if (voltage >= FUEL_EMPTY_VOLTAGE) {
-        percent = 0;
-    } else {
-        // 在 0 ~ 100 % 之间，线性划分
-        percent = (100 - ((u32)FUEL_EMPTY_VOLTAGE - voltage) * 100 /
-                             (FUEL_EMPTY_VOLTAGE - FUEL_FULL_VOLTAGE));
+        return 100;
+    }
+    if (voltage >= FUEL_EMPTY_VOLTAGE) {
+        return 0;
     }
 
-    return percent;
+    r_x10 = FUEL_NODE_VOLTAGE_TO_R_X10(voltage);
+    return (u8)((FUEL_EMPTY_R_X10 - r_x10) * 100 /
+                (FUEL_EMPTY_R_X10 - FUEL_FULL_R_X10));
 }
 
 void fuel_capacity_scan(void)

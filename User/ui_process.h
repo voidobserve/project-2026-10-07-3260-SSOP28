@@ -42,6 +42,13 @@ enum
 // 几乎没有油量的阈值：百分比小于等于该值（或没有接油量 0xFF）时，油桶与红灯一起闪烁
 #define FUEL_LEV_EMPTY_TH ((u8)5)
 
+// 油量挡位边界的回差，单位：百分比
+// 升档需超过 (边界 + 回差)，降档需落回 (边界 - 回差) 以下，避免读数压在边界上时格数来回跳
+#define FUEL_LEV_HYST ((u8)2)
+
+// 没有历史挡位值（上电首次检测）：不做回差，直接按百分比取档
+#define FUEL_LEV_UNKNOWN ((u8)0xFF)
+
 void ui_process_speed_period_add(void);
 void ui_process_speed(void);
 
